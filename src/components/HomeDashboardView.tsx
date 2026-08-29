@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   QuizResult,
   MoodEntry,
@@ -32,7 +32,11 @@ import {
   Trash2,
   CalendarDays,
   X,
+  LogIn,
+  UserCheck,
+  Cloud,
 } from 'lucide-react';
+import { useFirebase } from '../context/FirebaseContext';
 import { RadarChart } from './RadarChart';
 import { audioSynth } from '../utils/audioSynth';
 import confetti from 'canvas-confetti';
@@ -69,6 +73,7 @@ interface HomeDashboardViewProps {
   onOpenBooking: () => void;
   onOpenPreSession: (apt: Appointment) => void;
   onNavigateToChat: () => void;
+  onNavigateToProfile?: () => void;
   currentOrbTheme?: OrbThemeColor;
   onChangeOrbTheme?: (theme: OrbThemeColor) => void;
 }
@@ -93,18 +98,64 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
   onOpenBooking,
   onOpenPreSession,
   onNavigateToChat,
+  onNavigateToProfile,
   currentOrbTheme = 'mint',
   onChangeOrbTheme,
 }) => {
+  const { user, setIsAuthModalOpen } = useFirebase();
+
+  // Dynamic 7-day calendar window ending today
+  const effectiveMoodMap = useMemo(() => {
+    const today = new Date();
+    const mapByDate = new Map<string, MoodEntry>();
+    (allMoodHistory.length > 0 ? allMoodHistory : moodMap).forEach((m) => {
+      mapByDate.set(m.date, m);
+    });
+
+    const list: MoodEntry[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const dateStr = formatDateIso(d);
+      const dayLabel = getVietnameseDayLabel(d);
+
+      if (mapByDate.has(dateStr)) {
+        list.push(mapByDate.get(dateStr)!);
+      } else {
+        list.push({
+          date: dateStr,
+          dayLabel: i === 0 ? 'Hôm nay' : dayLabel,
+          emotion: 'Chưa ghi nhận',
+          note: '',
+          tags: [],
+          timestamp: d.getTime(),
+        });
+      }
+    }
+    return list;
+  }, [moodMap, allMoodHistory]);
+
   const [activeTab, setActiveTab] = useState<HomeSubTab>('overview');
   const [selectedDayDetail, setSelectedDayDetail] = useState<MoodEntry | null>(
-    moodMap[moodMap.length - 1] || null
+    effectiveMoodMap[effectiveMoodMap.length - 1] || null
   );
   const [selectedMoodTag, setSelectedMoodTag] = useState<string>('#CôngViệc');
   const [journalInput, setJournalInput] = useState<string>(
-    moodMap[moodMap.length - 1]?.note || ''
+    effectiveMoodMap[effectiveMoodMap.length - 1]?.note || ''
   );
   const [isSavedNotice, setIsSavedNotice] = useState(false);
+
+  // Synchronize selected day whenever effectiveMoodMap changes
+  useEffect(() => {
+    if (!selectedDayDetail) {
+      setSelectedDayDetail(effectiveMoodMap[effectiveMoodMap.length - 1] || null);
+    } else {
+      const match = effectiveMoodMap.find((m) => m.date === selectedDayDetail.date);
+      if (match) {
+        setSelectedDayDetail(match);
+      }
+    }
+  }, [effectiveMoodMap]);
 
   // Diary Archive & Search State (All history persistence)
   const [journalViewMode, setJournalViewMode] = useState<'recent7' | 'allArchive'>('recent7');
@@ -250,32 +301,43 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
 
   const handleSelectEmotionForDay = (emotion: string) => {
     audioSynth.playChime(528, 0.8);
-    const targetDate = selectedDayDetail?.date || moodMap[moodMap.length - 1]?.date || formatDateIso(new Date());
+    const targetDate = selectedDayDetail?.date || effectiveMoodMap[effectiveMoodMap.length - 1]?.date || formatDateIso(new Date());
+    const dateObj = new Date(targetDate);
+    const dayLabel = selectedDayDetail?.dayLabel || getVietnameseDayLabel(dateObj);
 
-    const updatedMap = moodMap.map((m) => {
-      if (m.date === targetDate) {
-        return {
-          ...m,
-          emotion: emotion,
-        };
-      }
-      return m;
-    });
+    const updatedEntry: MoodEntry = {
+      ...(selectedDayDetail || {}),
+      date: targetDate,
+      dayLabel,
+      emotion,
+      note: selectedDayDetail?.note || '',
+      tags: selectedDayDetail?.tags || [selectedMoodTag],
+      timestamp: dateObj.getTime(),
+    };
 
+    // Update 7-day mood map
+    const existingInMap = moodMap.some((m) => m.date === targetDate);
+    let updatedMap: MoodEntry[];
+    if (existingInMap) {
+      updatedMap = moodMap.map((m) => (m.date === targetDate ? updatedEntry : m));
+    } else {
+      updatedMap = [...moodMap, updatedEntry];
+    }
     onUpdateMoodMap(updatedMap);
 
+    // Update full mood history
     if (onUpdateAllMoodHistory) {
-      const updatedAll = effectiveAllHistory.map((m) => {
-        if (m.date === targetDate) {
-          return { ...m, emotion };
-        }
-        return m;
-      });
+      const existingInAll = effectiveAllHistory.some((m) => m.date === targetDate);
+      let updatedAll: MoodEntry[];
+      if (existingInAll) {
+        updatedAll = effectiveAllHistory.map((m) => (m.date === targetDate ? updatedEntry : m));
+      } else {
+        updatedAll = [...effectiveAllHistory, updatedEntry];
+      }
       onUpdateAllMoodHistory(updatedAll);
     }
 
-    const updatedSelected = updatedMap.find((m) => m.date === targetDate) || null;
-    setSelectedDayDetail(updatedSelected);
+    setSelectedDayDetail(updatedEntry);
 
     if (onChangeOrbTheme) {
       if (emotion === 'Tươi vui' || emotion === 'Hạnh phúc') onChangeOrbTheme('amber');
@@ -287,62 +349,45 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
   };
 
   const handleSaveJournalNote = () => {
-    if (!selectedDayDetail) return;
+    const targetDate = selectedDayDetail?.date || effectiveMoodMap[effectiveMoodMap.length - 1]?.date || formatDateIso(new Date());
     audioSynth.playChime(660, 0.4);
 
-    const targetDate = selectedDayDetail.date;
     const trimmedNote = journalInput.trim();
+    const dateObj = new Date(targetDate);
+    const dayLabel = selectedDayDetail?.dayLabel || getVietnameseDayLabel(dateObj);
+    const emotion = selectedDayDetail?.emotion || 'Tươi vui';
 
-    const updatedMap = moodMap.map((m) => {
-      if (m.date === targetDate) {
-        return {
-          ...m,
-          note: trimmedNote,
-          tags: Array.from(new Set([...(m.tags || []), selectedMoodTag])),
-        };
-      }
-      return m;
-    });
+    const updatedEntry: MoodEntry = {
+      ...(selectedDayDetail || {}),
+      date: targetDate,
+      dayLabel,
+      emotion,
+      note: trimmedNote,
+      tags: Array.from(new Set([...(selectedDayDetail?.tags || []), selectedMoodTag])),
+      timestamp: dateObj.getTime(),
+    };
 
+    const existingInMap = moodMap.some((m) => m.date === targetDate);
+    let updatedMap: MoodEntry[];
+    if (existingInMap) {
+      updatedMap = moodMap.map((m) => (m.date === targetDate ? updatedEntry : m));
+    } else {
+      updatedMap = [...moodMap, updatedEntry];
+    }
     onUpdateMoodMap(updatedMap);
 
     if (onUpdateAllMoodHistory) {
-      const dateExists = effectiveAllHistory.some((m) => m.date === targetDate);
+      const existingInAll = effectiveAllHistory.some((m) => m.date === targetDate);
       let updatedAll: MoodEntry[];
-      if (dateExists) {
-        updatedAll = effectiveAllHistory.map((m) => {
-          if (m.date === targetDate) {
-            return {
-              ...m,
-              note: trimmedNote,
-              tags: Array.from(new Set([...(m.tags || []), selectedMoodTag])),
-            };
-          }
-          return m;
-        });
+      if (existingInAll) {
+        updatedAll = effectiveAllHistory.map((m) => (m.date === targetDate ? updatedEntry : m));
       } else {
-        const newEntry: MoodEntry = {
-          date: targetDate,
-          dayLabel: selectedDayDetail.dayLabel || 'Hôm nay',
-          emotion: selectedDayDetail.emotion || 'Tươi vui',
-          note: trimmedNote,
-          tags: [selectedMoodTag],
-          timestamp: new Date(targetDate).getTime(),
-        };
-        updatedAll = [...effectiveAllHistory, newEntry];
+        updatedAll = [...effectiveAllHistory, updatedEntry];
       }
       onUpdateAllMoodHistory(updatedAll);
     }
 
-    setSelectedDayDetail((prev) =>
-      prev
-        ? {
-            ...prev,
-            note: trimmedNote,
-            tags: Array.from(new Set([...(prev.tags || []), selectedMoodTag])),
-          }
-        : null
-    );
+    setSelectedDayDetail(updatedEntry);
 
     setIsSavedNotice(true);
     setTimeout(() => setIsSavedNotice(false), 2500);
@@ -397,13 +442,37 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
   };
 
   const handleCheckInStreak = () => {
-    if (!challengeProgress || challengeProgress.todayCompleted) return;
+    if (challengeProgress?.todayCompleted) return;
     audioSynth.playChime(587, 1);
+
+    if (!challengeProgress) {
+      const defaultCh = INITIAL_CHALLENGES[0];
+      const initial: UserChallengeProgress = {
+        challengeId: defaultCh.id,
+        challengeTitle: defaultCh.title,
+        currentStreak: 1,
+        totalDays: defaultCh.durationDays,
+        daysCompletedCount: 1,
+        todayCompleted: true,
+        lastCheckInDate: formatDateIso(new Date()),
+      };
+      onUpdateChallengeProgress(initial);
+      try {
+        confetti({
+          particleCount: 50,
+          spread: 60,
+          origin: { y: 0.6 },
+        });
+      } catch {
+        // ignore
+      }
+      return;
+    }
 
     const updated: UserChallengeProgress = {
       ...challengeProgress,
       currentStreak: challengeProgress.currentStreak + 1,
-      daysCompletedCount: challengeProgress.daysCompletedCount + 1,
+      daysCompletedCount: Math.min(challengeProgress.daysCompletedCount + 1, challengeProgress.totalDays),
       todayCompleted: true,
       lastCheckInDate: formatDateIso(new Date()),
     };
@@ -436,28 +505,32 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
   };
 
   const nextAppointment = upcomingAppointments.find((a) => a.status === 'upcoming');
-  const streakCount = challengeProgress?.currentStreak ?? 12;
-  const totalDays = challengeProgress?.totalDays ?? 21;
-  const completedCount = challengeProgress?.daysCompletedCount ?? 12;
+  const streakCount = challengeProgress ? challengeProgress.currentStreak : 0;
+  const totalDays = challengeProgress ? challengeProgress.totalDays : 21;
+  const completedCount = challengeProgress ? challengeProgress.daysCompletedCount : 0;
 
-  // 100% Synchronized Weekly Emotional Counts directly from the 7-day moodMap
-  const positiveDays = moodMap.filter((m) => m.emotion === 'Tươi vui' || m.emotion === 'Hạnh phúc').length;
-  const balancedDays = moodMap.filter((m) => m.emotion === 'Ổn định' || m.emotion === 'Biết ơn').length;
-  const tensionDays = moodMap.filter(
+  // 100% Synchronized Weekly Emotional Counts directly from effectiveMoodMap
+  const trackedMoodEntries = effectiveMoodMap.filter((m) => m.emotion !== 'Chưa ghi nhận');
+  const positiveDays = trackedMoodEntries.filter((m) => m.emotion === 'Tươi vui' || m.emotion === 'Hạnh phúc').length;
+  const balancedDays = trackedMoodEntries.filter((m) => m.emotion === 'Ổn định' || m.emotion === 'Biết ơn').length;
+  const tensionDays = trackedMoodEntries.filter(
     (m) => m.emotion === 'Căng thẳng' || m.emotion === 'Mệt mỏi' || m.emotion === 'Bối rối' || m.emotion === 'Mất ngủ'
   ).length;
-  const totalTracked = moodMap.length || 7;
+  const totalTracked = trackedMoodEntries.length;
 
-  const positivePct = Math.round((positiveDays / totalTracked) * 100);
-  const balancedPct = Math.round((balancedDays / totalTracked) * 100);
-  const tensionPct = Math.max(0, 100 - positivePct - balancedPct);
+  const positivePct = totalTracked > 0 ? Math.round((positiveDays / totalTracked) * 100) : 0;
+  const balancedPct = totalTracked > 0 ? Math.round((balancedDays / totalTracked) * 100) : 0;
+  const tensionPct = totalTracked > 0 ? Math.max(0, 100 - positivePct - balancedPct) : 0;
 
   // Active challenge and remaining challenges
   const activeChallengeObj = INITIAL_CHALLENGES.find((ch) => ch.id === challengeProgress?.challengeId) || INITIAL_CHALLENGES[0];
   const otherChallenges = INITIAL_CHALLENGES.filter((ch) => ch.id !== challengeProgress?.challengeId);
 
   // Diary items for display
-  const rawDisplayEntries = journalViewMode === 'recent7' ? moodMap : [...effectiveAllHistory].reverse();
+  const rawDisplayEntries =
+    journalViewMode === 'recent7'
+      ? effectiveMoodMap.filter((m) => m.emotion !== 'Chưa ghi nhận' || (m.note && m.note.trim().length > 0))
+      : [...effectiveAllHistory].reverse();
   const filteredJournalEntries = rawDisplayEntries.filter((entry) => {
     const matchesSearch =
       !journalSearchQuery ||
@@ -476,35 +549,22 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
 
   return (
     <div className="p-4 space-y-4 pb-24 text-[#181d16] font-sans animate-in fade-in bg-[#f6fbf0]">
-      {/* 1. TOP HEADER (LOGO CHATBOT ORB + TITLE) */}
-      <div className="flex items-center justify-between pt-1">
-        {/* Left: Glassy Chatbot Orb Brand + App Title */}
-        <div className="flex items-center gap-2.5">
-          <div className="relative shadow-sm rounded-xl overflow-hidden flex items-center justify-center">
-            <RibbonIcon size={34} />
-          </div>
-          <span className="text-base font-extrabold tracking-tight text-[#006e22]">
-            SoulCare
-          </span>
-        </div>
-      </div>
-
       {/* Greeting Title */}
       <div className="space-y-0.5 pt-1">
         <h2 className="text-xl font-bold text-[#181d16] tracking-tight">
           {role === 'expert' ? (
             <>
-              Chào Bác sĩ, <span className="text-[#006e22] font-bold">hôm nay Bác sĩ cảm thấy thế nào?</span>
+              Chào {userName && userName !== 'Người dùng SoulCare' && !userName.includes('Bác sĩ') ? userName : 'Chuyên gia'}, <span className="text-[#006e22] font-bold">hôm nay bạn cảm thấy thế nào?</span>
             </>
           ) : (
             <>
-              Chào bạn, <span className="text-[#006e22] font-bold">hôm nay bạn cảm thấy thế nào?</span>
+              Chào {userName && userName !== 'Người dùng SoulCare' ? userName : 'bạn'}, <span className="text-[#006e22] font-bold">hôm nay bạn cảm thấy thế nào?</span>
             </>
           )}
         </h2>
         <p className="text-xs text-[#4a6551] font-normal">
           {role === 'expert'
-            ? 'Hãy dành một vài phút thư giãn tâm trí sau những giờ đồng hành cùng bệnh nhân.'
+            ? 'Hãy dành một vài phút thư giãn tâm trí sau những giờ đồng hành cùng khách hàng.'
             : 'Hãy dành một vài phút lắng nghe tâm trạng của mình nhé.'}
         </p>
       </div>
@@ -596,6 +656,11 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
                     <Check className="w-4 h-4 text-[#006e22] stroke-[3]" />
                     <span>Đã Điểm Danh</span>
                   </>
+                ) : !challengeProgress || completedCount === 0 ? (
+                  <>
+                    <Sparkles className="w-4 h-4 text-[#006e22]" />
+                    <span>Bắt đầu thử thách ngay</span>
+                  </>
                 ) : (
                   <>
                     <span>Điểm danh ngay</span>
@@ -605,7 +670,7 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
               </button>
 
               <span className="text-[11px] text-white/90 font-medium italic">
-                {streakCount} ngày liên tiếp
+                {streakCount > 0 ? `${streakCount} ngày liên tiếp` : 'Chưa có chuỗi liên tiếp'}
               </span>
             </div>
           </div>
@@ -725,7 +790,7 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1 text-xs text-[#006e22] font-bold">
                   <Video className="w-4 h-4" />
-                  Lịch Tư Vấn 1-1 Bác sĩ
+                  {role === 'expert' ? 'Ca tư vấn sắp tới' : 'Lịch tư vấn 1-1'}
                 </span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#e0f5ea] text-[#006e22] font-semibold">
                   Google Meet
@@ -738,7 +803,9 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
                   className="w-11 h-11 rounded-2xl object-cover ring-1 ring-[#67c76c]/30"
                 />
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-xs font-bold text-[#181d16] truncate">{nextAppointment.expertName}</h4>
+                  <h4 className="text-xs font-bold text-[#181d16] truncate">
+                    {role === 'expert' ? (nextAppointment.userName || 'Khách hàng') : nextAppointment.expertName}
+                  </h4>
                   <p className="text-[11px] text-[#6f7a6c]">
                     📅 {nextAppointment.dateStr} | ⏰ {nextAppointment.timeSlot}
                   </p>
@@ -752,7 +819,7 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
                 </button>
               </div>
             </div>
-          ) : (
+          ) : role === 'expert' ? null : (
             <div className="p-4 rounded-2xl bg-[#ffffff] border border-[#dfe4d9] flex items-center justify-between shadow-sm">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-[#e0f5ea] text-[#006e22] flex items-center justify-center">
@@ -760,7 +827,7 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
                 </div>
                 <div>
                   <h4 className="text-xs font-bold text-[#181d16]">Tham vấn Chuyên gia 0đ</h4>
-                  <p className="text-[11px] text-[#6f7a6c]">Buổi đầu miễn phí cùng Bác sĩ CBT</p>
+                  <p className="text-[11px] text-[#6f7a6c]">Buổi đầu miễn phí cùng Chuyên gia CBT</p>
                 </div>
               </div>
               <button
@@ -1559,7 +1626,7 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
       {activeTab === 'challenge' && (
         <div className="space-y-4 animate-in fade-in">
           {/* 1. HIGHLIGHTED ACTIVE CHALLENGE PINNED ON TOP */}
-          {challengeProgress && (
+          {challengeProgress ? (
             <div className="p-4 rounded-3xl bg-gradient-to-b from-[#e0f5ea]/90 to-[#ffffff] border-2 border-[#006e22] space-y-3.5 shadow-sm relative overflow-hidden">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
@@ -1615,12 +1682,31 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
                 <button
                   type="button"
                   onClick={handleCheckInStreak}
-                  className="flex-1 py-2.5 px-4 rounded-2xl bg-[#006e22] hover:bg-[#005116] text-white text-xs font-bold shadow-sm transition flex items-center justify-center gap-1.5"
+                  disabled={challengeProgress?.todayCompleted}
+                  className={`flex-1 py-2.5 px-4 rounded-2xl text-xs font-bold shadow-sm transition flex items-center justify-center gap-1.5 ${
+                    challengeProgress?.todayCompleted
+                      ? 'bg-[#e0f5ea] text-[#005116] border border-[#67c76c]/40 cursor-default'
+                      : 'bg-[#006e22] hover:bg-[#005116] text-white'
+                  }`}
                 >
                   <Check className="w-4 h-4 stroke-[3]" />
-                  <span>Điểm danh hoàn thành hôm nay</span>
+                  <span>
+                    {challengeProgress?.todayCompleted
+                      ? 'Đã hoàn thành điểm danh hôm nay'
+                      : 'Điểm danh hoàn thành hôm nay'}
+                  </span>
                 </button>
               </div>
+            </div>
+          ) : (
+            <div className="p-4 rounded-3xl bg-[#ffffff] border border-[#dfe4d9] text-center space-y-2.5 shadow-2xs">
+              <div className="w-10 h-10 rounded-2xl bg-[#e0f5ea] text-[#006e22] flex items-center justify-center mx-auto">
+                <MindfulFlameIcon size={22} className="text-[#006e22]" />
+              </div>
+              <h4 className="text-xs font-bold text-[#181d16]">Chưa Có Thử Thách Nào Đang Thực Hiện</h4>
+              <p className="text-[11px] text-[#6f7a6c] leading-relaxed max-w-xs mx-auto">
+                Hãy lựa chọn một thử thách rèn luyện bên dưới để bắt đầu chuỗi ngày nuôi dưỡng thói quen chữa lành và cải thiện giấc ngủ.
+              </p>
             </div>
           )}
 
@@ -1628,7 +1714,7 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
           <div className="p-4 rounded-3xl bg-[#ffffff] border border-[#dfe4d9] space-y-3 shadow-2xs">
             <h3 className="text-xs font-bold text-[#181d16] uppercase tracking-wider flex items-center gap-1.5">
               <MindfulFlameIcon size={18} className="text-amber-500" />
-              <span>Danh Sách Thử Thách Khác</span>
+              <span>{challengeProgress ? 'Danh Sách Thử Thách Khác' : 'Khám Phá Danh Sách Thử Thách'}</span>
             </h3>
 
             <div className="space-y-2.5">

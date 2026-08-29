@@ -12,9 +12,9 @@ import {
 import { generateUpcomingSlotsForExpert, generateInitialRealtimeMoodHistory } from '../utils/dateUtils';
 
 export const DEFAULT_SOS_BUDDY: SOSBuddy = {
-  name: 'Mẹ Lan',
-  phone: '0987 654 321',
-  relationship: 'Mẹ',
+  name: '',
+  phone: '',
+  relationship: '',
   customMessage:
     'Mình đang cảm thấy không ổn và cần một người lắng nghe... Hãy gọi lại cho mình khi nhận được tin nhắn nhé.',
   isNotified: false,

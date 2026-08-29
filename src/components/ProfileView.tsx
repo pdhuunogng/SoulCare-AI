@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserRole, SOSBuddy, QuizResult, UserChallengeProgress } from '../types';
 import {
   User,
@@ -17,12 +17,18 @@ import {
   Award,
   HelpCircle,
   Sparkles,
+  Cloud,
+  CloudCheck,
+  LogIn,
+  LogOut,
 } from 'lucide-react';
 import { audioSynth } from '../utils/audioSynth';
 import { RadarChart } from './RadarChart';
 import { WidgetCompanion } from './WidgetCompanion';
 import { OrbThemeColor } from './CrystalGlassOrb';
 import { AssessmentChartIcon } from './CustomIcons';
+import { useFirebase } from '../context/FirebaseContext';
+
 
 interface ProfileViewProps {
   currentRole: UserRole;
@@ -63,17 +69,50 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   currentOrbTheme = 'mint',
   onChangeOrbTheme,
 }) => {
+  const { user, userProfile, signInWithGoogle, logOut: handleFirebaseLogout, isFirebaseReady } = useFirebase();
   const [selectedSubPage, setSelectedSubPage] = useState<ProfileSubPage>(null);
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
   // SOS Buddy form state
-  const [buddyName, setBuddyName] = useState(sosBuddy.name);
-  const [buddyPhone, setBuddyPhone] = useState(sosBuddy.phone);
-  const [buddyMessage, setBuddyMessage] = useState(sosBuddy.customMessage);
+  const [buddyName, setBuddyName] = useState(sosBuddy.name || '');
+  const [buddyPhone, setBuddyPhone] = useState(sosBuddy.phone || '');
+  const [buddyMessage, setBuddyMessage] = useState(
+    sosBuddy.customMessage || 'Mình đang cảm thấy không ổn và cần một người lắng nghe... Hãy gọi lại cho mình khi nhận được tin nhắn nhé.'
+  );
   const [buddySavedSuccess, setBuddySavedSuccess] = useState(false);
+
+  useEffect(() => {
+    setBuddyName(sosBuddy.name || '');
+    setBuddyPhone(sosBuddy.phone || '');
+    if (sosBuddy.customMessage) {
+      setBuddyMessage(sosBuddy.customMessage);
+    }
+  }, [sosBuddy]);
 
   // Security passlock state
   const [isPasscodeEnabled, setIsPasscodeEnabled] = useState(false);
   const [isAnonymousPublic, setIsAnonymousPublic] = useState(true);
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setIsSigningIn(true);
+      const res = await signInWithGoogle();
+      if (res && res.displayName) {
+        onUpdateUserName(res.displayName);
+      }
+      audioSynth.playChime(528, 0.4);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await handleFirebaseLogout();
+    audioSynth.playChime(396, 0.3);
+  };
+
 
   const handleSaveSOSBuddy = (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,22 +158,65 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           {/* Profile User Card */}
           <div className="p-4 rounded-3xl bg-[#ffffff] border border-[#dfe4d9] space-y-3 shadow-2xs relative overflow-hidden">
             <div className="flex items-center gap-3.5">
-              <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-[#67c76c] to-[#c4f7f4] flex items-center justify-center text-[#005116] font-black text-xl shadow-sm ring-2 ring-[#67c76c]/30 shrink-0">
-                {userName ? userName.charAt(0).toUpperCase() : 'U'}
-              </div>
+              {user?.photoURL ? (
+                <img
+                  src={user.photoURL}
+                  alt={user.displayName || userName}
+                  className="w-13 h-13 rounded-2xl object-cover ring-2 ring-[#67c76c]/40 shrink-0 shadow-sm"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-[#67c76c] to-[#c4f7f4] flex items-center justify-center text-[#005116] font-black text-xl shadow-sm ring-2 ring-[#67c76c]/30 shrink-0">
+                  {userName ? userName.charAt(0).toUpperCase() : 'U'}
+                </div>
+              )}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="text-sm font-bold text-[#181d16] truncate">
-                    {userName || 'Thanh Hà'}
+                    {user?.displayName || userName || 'Thanh Hà'}
                   </h2>
-                  <span className="px-2.5 py-0.5 rounded-full bg-[#e0f5ea] text-[#006e22] text-[9px] font-bold shrink-0 border border-[#67c76c]/30">
-                    Thành viên SoulCare
+                  <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold shrink-0 border ${
+                    currentRole === 'expert'
+                      ? 'bg-amber-100 text-amber-900 border-amber-300'
+                      : 'bg-[#e0f5ea] text-[#006e22] border-[#67c76c]/30'
+                  }`}>
+                    {currentRole === 'expert' ? '🩺 Chuyên Gia / Bác Sĩ' : '🌿 Khách Hàng'}
                   </span>
                 </div>
                 <p className="text-[11px] text-[#6f7a6c] mt-0.5 line-clamp-1">
-                  "Lắng nghe và thấu cảm chính mình mỗi ngày."
+                  {user?.email || (currentRole === 'expert' ? 'Chuyên gia Tâm lý lâm sàng' : '"Lắng nghe và thấu cảm chính mình mỗi ngày."')}
                 </p>
               </div>
+            </div>
+
+            {/* Firebase Cloud Sync Status */}
+            <div className="pt-2 border-t border-[#f0f4ec] flex items-center justify-between text-[11px]">
+              <div className="flex items-center gap-1.5 text-[#006e22]">
+                <Cloud className="w-3.5 h-3.5 text-[#006e22]" />
+                <span className="font-semibold">
+                  {isFirebaseReady ? 'Firebase Firestore (asia-southeast1)' : 'Đang kết nối Firebase...'}
+                </span>
+              </div>
+              {user ? (
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="px-2.5 py-1 rounded-xl bg-[#f7faf8] hover:bg-[#ffdad6] text-[#ba1a1a] text-[10px] font-bold border border-[#dfe4d9] flex items-center gap-1 transition"
+                >
+                  <LogOut className="w-3 h-3" />
+                  Đăng xuất
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  disabled={isSigningIn}
+                  className="px-2.5 py-1 rounded-xl bg-[#006e22] hover:bg-[#005116] text-white text-[10px] font-bold flex items-center gap-1 shadow-xs transition active:scale-95 disabled:opacity-50"
+                >
+                  <LogIn className="w-3 h-3" />
+                  {isSigningIn ? 'Đang xác thực...' : 'Đăng nhập Google'}
+                </button>
+              )}
             </div>
           </div>
 
@@ -230,14 +312,20 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                     <h4 className="text-xs font-bold text-[#181d16] group-hover:text-[#ba1a1a] transition">
                       Vòng Tròn Tin Tưởng (SOS Buddy)
                     </h4>
-                    {sosBuddy.name && (
+                    {sosBuddy.name ? (
                       <span className="text-[9px] px-2 py-0.2 rounded-full bg-[#ba1a1a] text-white font-semibold">
                         {sosBuddy.name}
+                      </span>
+                    ) : (
+                      <span className="text-[9px] px-2 py-0.2 rounded-full bg-[#ba1a1a]/15 text-[#ba1a1a] font-semibold">
+                        Chưa cài đặt
                       </span>
                     )}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <p className="text-[10px] text-[#6f7a6c]">Người thân khẩn cấp</p>
+                    <p className="text-[10px] text-[#6f7a6c]">
+                      {sosBuddy.name ? 'Người thân khẩn cấp' : 'Chạm để thiết lập người thân khẩn cấp'}
+                    </p>
                     {sosBuddy.phone && (
                       <span className="text-[10px] text-[#ba1a1a] font-mono flex items-center gap-1">
                         <PhoneCall className="w-2.5 h-2.5" />
@@ -323,6 +411,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           {/* SUB-SLIDE 1: ACCOUNT INFO */}
           {selectedSubPage === 'account' && (
             <div className="space-y-3 animate-in fade-in">
+              {/* Account Form */}
               <div className="p-4 rounded-3xl bg-[#ffffff] border border-[#dfe4d9] space-y-3 shadow-2xs">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-[#6f7a6c]">
                   Thông Tin Tài Khoản
@@ -353,11 +442,68 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   </div>
 
                   <div>
-                    <label className="text-[10px] text-[#6f7a6c]">Email kết nối Google Meet:</label>
-                    <div className="p-2.5 rounded-xl bg-[#f7faf8] border border-[#dfe4d9] text-[#181d16] text-xs mt-1">
-                      thanhha.psych@taman.vn
+                    <label className="text-[10px] text-[#6f7a6c]">Vai trò tài khoản (Khách Hàng / Chuyên Gia):</label>
+                    <div className="grid grid-cols-2 gap-2 mt-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onRoleChange('user');
+                          audioSynth.playChime(520, 0.2);
+                        }}
+                        className={`p-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                          currentRole === 'user'
+                            ? 'bg-[#006e22] text-white border-[#006e22] shadow-2xs'
+                            : 'bg-[#f7faf8] text-[#4a5548] border-[#dfe4d9] hover:bg-[#e0f5ea]'
+                        }`}
+                      >
+                        <span>🌿 Khách Hàng</span>
+                        {currentRole === 'user' && <CheckCircle className="w-3.5 h-3.5 text-white" />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onRoleChange('expert');
+                          audioSynth.playChime(587, 0.2);
+                        }}
+                        className={`p-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                          currentRole === 'expert'
+                            ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
+                            : 'bg-[#f7faf8] text-[#4a5548] border-[#dfe4d9] hover:bg-amber-50'
+                        }`}
+                      >
+                        <span>🩺 Chuyên Gia</span>
+                        {currentRole === 'expert' && <CheckCircle className="w-3.5 h-3.5 text-white" />}
+                      </button>
                     </div>
                   </div>
+
+                  <div>
+                    <label className="text-[10px] text-[#6f7a6c]">Email tài khoản:</label>
+                    <div className="p-2.5 rounded-xl bg-[#f7faf8] border border-[#dfe4d9] text-[#181d16] text-xs mt-1">
+                      {user?.email || 'thanhha.psych@taman.vn'}
+                    </div>
+                  </div>
+
+                  {user ? (
+                    <button
+                      type="button"
+                      onClick={handleSignOut}
+                      className="w-full mt-2 py-2.5 rounded-xl bg-[#ffdad6] hover:bg-[#ffd1cc] text-[#ba1a1a] text-xs font-bold border border-[#ba1a1a]/30 flex items-center justify-center gap-1.5 transition"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Đăng xuất tài khoản Google
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleGoogleSignIn}
+                      disabled={isSigningIn}
+                      className="w-full mt-2 py-2.5 rounded-xl bg-[#006e22] hover:bg-[#005116] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition disabled:opacity-50"
+                    >
+                      <LogIn className="w-4 h-4" />
+                      {isSigningIn ? 'Đang kết nối Google...' : 'Đăng nhập bằng Google'}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -449,7 +595,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
                   <div className="p-3 bg-[#e0f5ea] rounded-2xl border border-[#67c76c]/30 text-[11px] text-[#005116] flex items-start gap-2">
                     <Lock className="w-4 h-4 text-[#006e22] shrink-0 mt-0.5" />
-                    <span><strong>Cam kết bảo mật:</strong> AI không tham gia nghe lén hay ghi âm cuộc gọi Google Meet 1-1 giữa bạn và Bác sĩ.</span>
+                    <span><strong>Cam kết bảo mật:</strong> AI không tham gia nghe lén hay ghi âm cuộc gọi Google Meet 1-1 giữa bạn và Chuyên gia.</span>
                   </div>
                 </div>
               </div>

@@ -1,0 +1,132 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User account profile and personalized preferences",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 150 },
+        "role": { "type": "string", "enum": ["user", "expert", "admin"] },
+        "currentOrbTheme": { "type": "string", "maxLength": 30 },
+        "sosBuddy": { "type": "object" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "name", "email", "role"]
+    },
+    "MoodEntry": {
+      "title": "MoodEntry",
+      "description": "User emotion check-in log",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "date": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+        "dayLabel": { "type": "string", "maxLength": 10 },
+        "emotion": { "type": "string", "maxLength": 50 },
+        "note": { "type": "string", "maxLength": 1000 },
+        "tags": { "type": "array" },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["userId", "date", "emotion"]
+    },
+    "QuizResult": {
+      "title": "QuizResult",
+      "description": "Clinical DASS-21 & PSS-10 psychological assessment result",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "depressionPct": { "type": "number" },
+        "anxietyPct": { "type": "number" },
+        "stressPct": { "type": "number" },
+        "sleepPct": { "type": "number" },
+        "overallSummary": { "type": "string", "maxLength": 2000 },
+        "tier": { "type": "string", "maxLength": 20 },
+        "timestamp": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["userId", "depressionPct", "anxietyPct", "stressPct", "sleepPct"]
+    },
+    "ChallengeProgress": {
+      "title": "ChallengeProgress",
+      "description": "User 7-21-30 day self-care challenge progress and streak",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "challengeId": { "type": "string", "maxLength": 50 },
+        "challengeTitle": { "type": "string", "maxLength": 150 },
+        "currentStreak": { "type": "number" },
+        "totalDays": { "type": "number" },
+        "daysCompletedCount": { "type": "number" },
+        "todayCompleted": { "type": "boolean" },
+        "lastCheckInDate": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["userId", "challengeId", "currentStreak", "totalDays"]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "1-on-1 psychological consultation booking or offline clinic appointment",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string", "maxLength": 100 },
+        "type": { "type": "string", "enum": ["online", "offline"] },
+        "expertId": { "type": "string", "maxLength": 50 },
+        "expertName": { "type": "string", "maxLength": 100 },
+        "expertTitle": { "type": "string", "maxLength": 100 },
+        "clinicId": { "type": "string", "maxLength": 50 },
+        "clinicName": { "type": "string", "maxLength": 150 },
+        "dateStr": { "type": "string", "maxLength": 50 },
+        "timeSlot": { "type": "string", "maxLength": 50 },
+        "googleMeetLink": { "type": "string", "maxLength": 250 },
+        "status": { "type": "string", "enum": ["upcoming", "completed", "cancelled"] },
+        "userNotes": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["userId", "userName", "type", "dateStr", "timeSlot", "status"]
+    },
+    "ExpertProfile": {
+      "title": "ExpertProfile",
+      "description": "Verified medical and psychological expert profile",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string", "maxLength": 100 },
+        "title": { "type": "string", "maxLength": 100 },
+        "hospitalAffiliation": { "type": "string", "maxLength": 200 },
+        "licenseNumber": { "type": "string", "maxLength": 50 },
+        "rating": { "type": "number" },
+        "reviewCount": { "type": "number" }
+      },
+      "required": ["name", "title"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User profile collection"
+    },
+    "/users/{userId}/moodLogs/{moodLogId}": {
+      "schema": { "$ref": "#/entities/MoodEntry" },
+      "description": "Subcollection of daily mood check-ins for the user"
+    },
+    "/users/{userId}/quizResults/{quizResultId}": {
+      "schema": { "$ref": "#/entities/QuizResult" },
+      "description": "Subcollection of psychological evaluation records"
+    },
+    "/users/{userId}/challenges/{challengeId}": {
+      "schema": { "$ref": "#/entities/ChallengeProgress" },
+      "description": "Subcollection of active wellness challenges and streaks"
+    },
+    "/appointments/{appointmentId}": {
+      "schema": { "$ref": "#/entities/Appointment" },
+      "description": "Consultation appointments between users and experts/clinics"
+    },
+    "/experts/{expertId}": {
+      "schema": { "$ref": "#/entities/ExpertProfile" },
+      "description": "Directory of licensed therapists and doctors"
+    }
+  }
+}

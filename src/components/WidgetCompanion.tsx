@@ -27,9 +27,9 @@ export const WidgetCompanion: React.FC<WidgetCompanionProps> = ({
 }) => {
   const [justCheckedIn, setJustCheckedIn] = useState(false);
 
-  const streakCount = challengeProgress?.currentStreak ?? 5;
-  const totalDays = challengeProgress?.totalDays ?? 7;
-  const completedCount = challengeProgress?.daysCompletedCount ?? 5;
+  const streakCount = challengeProgress ? challengeProgress.currentStreak : 0;
+  const totalDays = challengeProgress ? challengeProgress.totalDays : 21;
+  const completedCount = challengeProgress ? challengeProgress.daysCompletedCount : 0;
 
   const handleStreakClick = () => {
     onCheckInStreak();

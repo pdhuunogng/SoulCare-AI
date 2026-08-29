@@ -20,12 +20,12 @@ interface CancelAppointmentModalProps {
 }
 
 const PRESET_REASONS = [
-  'Bận lịch làm việc / Học tập đột xuất',
-  'Có việc gia đình phát sinh gấp',
-  'Tình trạng tâm lý / Sức khỏe đã cải thiện',
-  'Muốn đổi sang Chuyên gia hoặc khung giờ khác',
-  'Sự cố thiết bị / Đường truyền mạng không đảm bảo',
-  'Lý do cá nhân khác',
+  'Bận lịch đột xuất',
+  'Việc gia đình phát sinh',
+  'Tâm lý / Sức khỏe đã cải thiện',
+  'Đổi chuyên gia hoặc giờ khác',
+  'Sự cố thiết bị / mạng',
+  'Lý do khác',
 ];
 
 export const CancelAppointmentModal: React.FC<CancelAppointmentModalProps> = ({
@@ -51,12 +51,12 @@ export const CancelAppointmentModal: React.FC<CancelAppointmentModalProps> = ({
       .join(' - ');
 
     if (!finalReason) {
-      setErrorMsg('Vui lòng chọn hoặc nhập ít nhất một lý do hủy lịch hẹn.');
+      setErrorMsg('Vui lòng chọn hoặc nhập ít nhất một lý do hủy lịch.');
       return;
     }
 
     if (!agreedPolicy) {
-      setErrorMsg('Vui lòng xác nhận bạn đã hiểu quy định hủy lịch trước 12h.');
+      setErrorMsg('Vui lòng xác nhận bạn đã hiểu quy định hủy trước 12h.');
       return;
     }
 
@@ -80,18 +80,18 @@ export const CancelAppointmentModal: React.FC<CancelAppointmentModalProps> = ({
       id="cancel-appointment-modal-backdrop"
     >
       <div
-        className="relative w-full max-w-lg bg-[#ffffff] border border-[#dfe4d9] rounded-3xl shadow-xl p-6 text-[#181d16] flex flex-col max-h-[90vh] overflow-y-auto space-y-4"
+        className="relative w-full max-w-lg bg-[#ffffff] border border-[#dfe4d9] rounded-3xl shadow-xl p-5 text-[#181d16] flex flex-col max-h-[90vh] overflow-y-auto space-y-3.5"
         id="cancel-appointment-modal-dialog"
       >
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-[#dfe4d9]">
+        <div className="flex items-center justify-between pb-2.5 border-b border-[#dfe4d9]">
           <div className="flex items-center gap-2 text-rose-700">
             <div className="w-8 h-8 rounded-2xl bg-rose-50 flex items-center justify-center border border-rose-200">
               <AlertTriangle className="w-4 h-4 text-rose-600" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-[#181d16]">Hủy Lịch Hẹn Tư Vấn</h3>
-              <p className="text-[11px] text-[#6f7a6c]">Xác nhận hủy và giải phóng khung giờ cho chuyên gia</p>
+              <h3 className="text-sm font-bold text-[#181d16]">Hủy Lịch Hẹn</h3>
+              <p className="text-[11px] text-[#6f7a6c]">Xác nhận hủy và giải phóng khung giờ</p>
             </div>
           </div>
           <button
@@ -105,20 +105,20 @@ export const CancelAppointmentModal: React.FC<CancelAppointmentModalProps> = ({
         </div>
 
         {/* Appointment Information Card */}
-        <div className="p-3.5 rounded-2xl bg-[#f7faf8] border border-[#dfe4d9] flex items-center gap-3">
+        <div className="p-3 rounded-2xl bg-[#f7faf8] border border-[#dfe4d9] flex items-center gap-3">
           <img
             src={
               appointment.expertAvatar ||
               'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=300'
             }
             alt={appointment.expertName || 'Chuyên gia'}
-            className="w-12 h-12 rounded-2xl object-cover ring-1 ring-[#dfe4d9] shrink-0"
+            className="w-11 h-11 rounded-2xl object-cover ring-1 ring-[#dfe4d9] shrink-0"
           />
           <div className="flex-1 min-w-0">
             <h4 className="text-xs font-bold text-[#181d16] truncate">
-              {appointment.expertName || 'Chuyên gia tư vấn SoulCare'}
+              {appointment.expertName || 'Chuyên gia SoulCare'}
             </h4>
-            <p className="text-[11px] text-[#6f7a6c] truncate">{appointment.expertTitle || 'Tư vấn tâm lý 1-1'}</p>
+            <p className="text-[11px] text-[#6f7a6c] truncate">{appointment.expertTitle || 'Tư vấn 1-1'}</p>
             <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#006e22] mt-0.5">
               <Calendar className="w-3 h-3" />
               <span>{appointment.dateStr} • {appointment.timeSlot}</span>
@@ -127,26 +127,21 @@ export const CancelAppointmentModal: React.FC<CancelAppointmentModalProps> = ({
         </div>
 
         {/* 12-HOUR CANCELLATION POLICY NOTICE */}
-        <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-300/80 text-amber-950 space-y-2 text-xs" id="cancellation-policy-notice">
-          <div className="flex items-center gap-2 font-bold text-amber-900">
-            <Clock className="w-4 h-4 text-amber-700 shrink-0" />
-            <span>Quy Định Hủy Lịch Trước 12 Giờ (Bắt Buộc)</span>
+        <div className="p-2.5 rounded-2xl bg-amber-50/80 border border-amber-300/80 text-amber-950 space-y-1 text-xs" id="cancellation-policy-notice">
+          <div className="flex items-center gap-1.5 font-bold text-amber-900">
+            <Clock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+            <span>Quy định hủy trước 12 giờ</span>
           </div>
-          <div className="text-[11px] leading-relaxed text-amber-900/90 space-y-1">
-            <p>
-              • Vui lòng thông báo hủy trước <strong>ít nhất 12 giờ</strong> so với giờ hẹn để Chuyên gia có thể sắp xếp hỗ trợ người bệnh khác đang cần phiên khẩn cấp.
-            </p>
-            <p>
-              • Hủy sát giờ (&lt;12h) hoặc vắng mặt không lý do (No-show) có thể tạm thời giới hạn quyền đặt lịch khám 0đ trong các tuần tiếp theo.
-            </p>
-          </div>
+          <p className="text-[11px] leading-relaxed text-amber-900/90">
+            Vui lòng báo hủy trước <strong>ít nhất 12 giờ</strong> để nhường suất cho người khác.
+          </p>
         </div>
 
         {/* REASON SELECTION */}
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <label className="text-xs font-bold text-[#181d16] flex items-center justify-between">
-            <span>Lý do hủy lịch hẹn: <span className="text-rose-600">*</span></span>
-            <span className="text-[11px] text-[#6f7a6c] font-normal">Chọn một lý do bên dưới</span>
+            <span>Lý do hủy: <span className="text-rose-600">*</span></span>
+            <span className="text-[11px] text-[#6f7a6c] font-normal">Chọn một lý do</span>
           </label>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
@@ -160,7 +155,7 @@ export const CancelAppointmentModal: React.FC<CancelAppointmentModalProps> = ({
                     setSelectedReason(reason);
                     setErrorMsg(null);
                   }}
-                  className={`p-2.5 rounded-xl text-left text-xs transition border flex items-center justify-between gap-1.5 ${
+                  className={`p-2 rounded-xl text-left text-xs transition border flex items-center justify-between gap-1.5 ${
                     isSelected
                       ? 'bg-[#e0f5ea] border-[#006e22] text-[#005116] font-bold shadow-2xs'
                       : 'bg-[#f7faf8] border-[#dfe4d9] text-[#3f4a3d] hover:bg-slate-50'
@@ -175,10 +170,10 @@ export const CancelAppointmentModal: React.FC<CancelAppointmentModalProps> = ({
         </div>
 
         {/* CUSTOM REASON TEXTAREA */}
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           <label className="text-xs font-bold text-[#181d16] flex items-center justify-between">
             <span>Ghi chú thêm (tùy chọn):</span>
-            <span className="text-[10px] text-[#6f7a6c]">{customReason.length}/200 ký tự</span>
+            <span className="text-[10px] text-[#6f7a6c]">{customReason.length}/200</span>
           </label>
           <textarea
             value={customReason}
@@ -187,14 +182,14 @@ export const CancelAppointmentModal: React.FC<CancelAppointmentModalProps> = ({
               setCustomReason(e.target.value);
               setErrorMsg(null);
             }}
-            placeholder="Chia sẻ thêm lý do cụ thể để SoulCare và Bác sĩ hiểu rõ hơn..."
-            className="w-full p-3 rounded-2xl bg-[#f7faf8] border border-[#dfe4d9] text-xs text-[#181d16] placeholder-[#6f7a6c]/60 focus:outline-none focus:ring-2 focus:ring-[#006e22] resize-none h-18"
+            placeholder="Chi tiết thêm lý do..."
+            className="w-full p-2.5 rounded-2xl bg-[#f7faf8] border border-[#dfe4d9] text-xs text-[#181d16] placeholder-[#6f7a6c]/60 focus:outline-none focus:ring-2 focus:ring-[#006e22] resize-none h-16"
             id="cancel-reason-textarea"
           />
         </div>
 
         {/* ACKNOWLEDGMENT CHECKBOX */}
-        <label className="flex items-start gap-2.5 p-3 rounded-2xl bg-[#f7faf8] border border-[#dfe4d9] cursor-pointer select-none text-xs text-[#181d16]">
+        <label className="flex items-start gap-2 p-2.5 rounded-2xl bg-[#f7faf8] border border-[#dfe4d9] cursor-pointer select-none text-xs text-[#181d16]">
           <input
             type="checkbox"
             checked={agreedPolicy}
@@ -206,13 +201,13 @@ export const CancelAppointmentModal: React.FC<CancelAppointmentModalProps> = ({
             id="chk-agreed-policy"
           />
           <span className="leading-relaxed text-[11px]">
-            Tôi xác nhận đã đọc và hiểu rõ <strong>quy định báo hủy trước 12 giờ</strong> của nền tảng SoulCare.
+            Tôi hiểu <strong>quy định báo hủy trước 12 giờ</strong> của SoulCare.
           </span>
         </label>
 
         {/* Error message */}
         {errorMsg && (
-          <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-medium">
+          <div className="p-2 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-medium">
             ⚠️ {errorMsg}
           </div>
         )}
@@ -226,7 +221,7 @@ export const CancelAppointmentModal: React.FC<CancelAppointmentModalProps> = ({
             className="py-2.5 px-4 rounded-2xl bg-[#f7faf8] hover:bg-[#e0f5ea] border border-[#dfe4d9] text-xs font-bold text-[#181d16] transition"
             id="btn-cancel-modal-back"
           >
-            Quay lại / Giữ lịch
+            Giữ lịch
           </button>
 
           <button
@@ -236,7 +231,7 @@ export const CancelAppointmentModal: React.FC<CancelAppointmentModalProps> = ({
             className="py-2.5 px-4 rounded-2xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs"
             id="btn-confirm-cancel-appointment"
           >
-            {isSubmitting ? 'Đang xử lý...' : 'Xác nhận hủy lịch'}
+            {isSubmitting ? 'Đang xử lý...' : 'Xác nhận hủy'}
           </button>
         </div>
       </div>

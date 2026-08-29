@@ -27,6 +27,7 @@ interface DeviceFrameProps {
   onRoleChange: (role: UserRole) => void;
   children: React.ReactNode;
   currentOrbTheme?: OrbThemeColor;
+  hideNav?: boolean;
 }
 
 export const DeviceFrame: React.FC<DeviceFrameProps> = ({
@@ -38,6 +39,7 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
   onRoleChange,
   children,
   currentOrbTheme = 'mint',
+  hideNav = false,
 }) => {
   const userNavItems = [
     { id: 'home', label: 'Trang chủ', icon: Home },
@@ -127,30 +129,32 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
           <div className="flex-1 overflow-y-auto">{children}</div>
 
           {/* Bottom Navigation for Responsive */}
-          <nav className="w-full bg-[#ffffff]/90 backdrop-blur-md border-t border-[#dfe4d9] px-6 py-2.5 flex items-center justify-around z-30">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = currentTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => {
-                    audioSynth.playChime(520, 0.15);
-                    onTabChange(item.id as any);
-                  }}
-                  className={`flex items-center gap-2 py-2 px-5 rounded-full transition-all duration-200 ${
-                    isActive
-                      ? 'text-[#005116] bg-[#d6f5df] font-bold shadow-sm ring-1 ring-[#67c76c]/40 scale-[1.02]'
-                      : 'text-[#4a6551] hover:text-[#181d16] hover:bg-[#eaf0e5]/60'
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-[#006e22] stroke-[2.5]' : 'text-[#4a6551]'}`} />
-                  <span className="text-xs">{item.label}</span>
-                </button>
-              );
-            })}
-          </nav>
+          {!hideNav && (
+            <nav className="w-full bg-[#ffffff]/90 backdrop-blur-md border-t border-[#dfe4d9] px-6 py-2.5 flex items-center justify-around z-30">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = currentTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      audioSynth.playChime(520, 0.15);
+                      onTabChange(item.id as any);
+                    }}
+                    className={`flex items-center gap-2 py-2 px-5 rounded-full transition-all duration-200 ${
+                      isActive
+                        ? 'text-[#005116] bg-[#d6f5df] font-bold shadow-sm ring-1 ring-[#67c76c]/40 scale-[1.02]'
+                        : 'text-[#4a6551] hover:text-[#181d16] hover:bg-[#eaf0e5]/60'
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-[#006e22] stroke-[2.5]' : 'text-[#4a6551]'}`} />
+                    <span className="text-xs">{item.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+          )}
         </main>
       ) : (
         <div
@@ -190,32 +194,34 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({
             </div>
 
             {/* Bottom Navigation Bar (Stitch Rounded Soft Pill Style) */}
-            <nav className="w-full bg-[#ffffff]/92 backdrop-blur-md border-t border-[#dfe4d9] px-2 py-2 flex items-center justify-around z-30 shrink-0 shadow-sm">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = currentTab === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      audioSynth.playChime(520, 0.15);
-                      onTabChange(item.id as any);
-                    }}
-                    className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-2xl transition-all duration-200 ${
-                      isActive
-                        ? 'bg-[#d6f5df] text-[#005116] font-bold scale-105 shadow-sm border border-[#67c76c]/30'
-                        : 'text-[#4a6551] hover:text-[#181d16]'
-                    }`}
-                  >
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-[#006e22] stroke-[2.5]' : 'text-[#4a6551]'}`} />
-                    <span className={`text-[10px] tracking-tight ${isActive ? 'text-[#005116] font-black' : 'text-[#4a6551] font-medium'}`}>
-                      {item.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </nav>
+            {!hideNav && (
+              <nav className="w-full bg-[#ffffff]/92 backdrop-blur-md border-t border-[#dfe4d9] px-2 py-2 flex items-center justify-around z-30 shrink-0 shadow-sm">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = currentTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        audioSynth.playChime(520, 0.15);
+                        onTabChange(item.id as any);
+                      }}
+                      className={`flex flex-col items-center justify-center gap-0.5 py-1 px-3 rounded-2xl transition-all duration-200 ${
+                        isActive
+                          ? 'bg-[#d6f5df] text-[#005116] font-bold scale-105 shadow-sm border border-[#67c76c]/30'
+                          : 'text-[#4a6551] hover:text-[#181d16]'
+                      }`}
+                    >
+                      <Icon className={`w-4 h-4 ${isActive ? 'text-[#006e22] stroke-[2.5]' : 'text-[#4a6551]'}`} />
+                      <span className={`text-[10px] tracking-tight ${isActive ? 'text-[#005116] font-black' : 'text-[#4a6551] font-medium'}`}>
+                        {item.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </nav>
+            )}
 
             {/* Bottom Home Indicator */}
             <div className="w-full h-4 flex items-center justify-center shrink-0 z-30 bg-[#ffffff]">

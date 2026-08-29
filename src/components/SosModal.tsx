@@ -135,14 +135,14 @@ export const SosModal: React.FC<SosModalProps> = ({
                 <div className="flex items-center gap-2">
                   <Send className="w-4 h-4 text-[#ba1a1a]" />
                   <h4 className="text-xs font-bold text-[#181d16]">
-                    SOS Buddy: {sosBuddy.name || 'Người thân'}
+                    SOS Buddy: {sosBuddy.name ? sosBuddy.name : 'Người thân khẩn cấp (Chưa cài đặt)'}
                   </h4>
                 </div>
                 {sosBuddy.phone && (
                   <a
                     href={`tel:${sosBuddy.phone.replace(/\s+/g, '')}`}
                     className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#ffdad6] hover:bg-[#ffb4ab] text-[#ba1a1a] text-[11px] font-bold transition"
-                    title={`Gọi ${sosBuddy.name}`}
+                    title={`Gọi ${sosBuddy.name || 'Người thân'}`}
                   >
                     <PhoneCall className="w-3 h-3 text-[#ba1a1a]" />
                     <span>{sosBuddy.phone}</span>
@@ -157,7 +157,7 @@ export const SosModal: React.FC<SosModalProps> = ({
                   className="py-2.5 px-3 rounded-full bg-[#ba1a1a] hover:bg-[#93000a] text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs"
                 >
                   <Send className="w-3.5 h-3.5" />
-                  <span>Gửi tin SOS</span>
+                  <span>{sosBuddy.phone ? 'Gửi tin SOS' : 'Gửi tín hiệu SOS'}</span>
                 </button>
 
                 <a
@@ -165,7 +165,7 @@ export const SosModal: React.FC<SosModalProps> = ({
                   className="py-2.5 px-3 rounded-full bg-[#ffffff] hover:bg-[#f7faf8] border border-[#dfe4d9] text-[#181d16] text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs"
                 >
                   <PhoneCall className="w-3.5 h-3.5 text-[#ba1a1a]" />
-                  <span>{sosBuddy.phone || '115'}</span>
+                  <span>{sosBuddy.phone ? sosBuddy.phone : 'Gọi 115'}</span>
                 </a>
               </div>
             </div>

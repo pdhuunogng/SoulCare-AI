@@ -20,7 +20,7 @@ interface EmotionIconProps {
 }
 
 /**
- * Custom-designed Emotion Vector Icons for AI Riser / Tâm An
+ * Custom-designed Emotion Vector Icons for SoulCare
  * Minimalist, warm, mindfulness Zen-aesthetic vector faces with expressive curves and blush accents.
  */
 export const EmotionIcon: React.FC<EmotionIconProps> = ({
@@ -437,7 +437,7 @@ export const EmotionIcon: React.FC<EmotionIconProps> = ({
 };
 
 /**
- * Custom Tab & Feature Icons tailored for AI Riser
+ * Custom Tab & Feature Icons tailored for SoulCare
  */
 
 export const ZenLeafIcon: React.FC<{ size?: number; className?: string }> = ({

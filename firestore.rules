@@ -1,0 +1,142 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global deny-all safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email in ['iamdung2109@gmail.com', 'dunganykuku2010@gmail.com'] ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // User Profile Validation
+    function isValidUserProfile(data, userId) {
+      return data.userId == userId &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.email is string && data.email.size() <= 150 &&
+             data.role in ['user', 'expert', 'admin'];
+    }
+
+    // Mood Entry Validation
+    function isValidMoodEntry(data, userId) {
+      return data.userId == userId &&
+             data.date is string && data.date.size() <= 20 &&
+             data.emotion is string && data.emotion.size() <= 50;
+    }
+
+    // Quiz Result Validation
+    function isValidQuizResult(data, userId) {
+      return data.userId == userId &&
+             data.depressionPct is number &&
+             data.anxietyPct is number &&
+             data.stressPct is number &&
+             data.sleepPct is number;
+    }
+
+    // Challenge Progress Validation
+    function isValidChallengeProgress(data, userId) {
+      return data.userId == userId &&
+             data.challengeId is string && data.challengeId.size() <= 50 &&
+             data.currentStreak is number &&
+             data.totalDays is number;
+    }
+
+    // Appointment Validation
+    function isValidAppointment(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             data.userName is string && data.userName.size() <= 100 &&
+             data.type in ['online', 'offline'] &&
+             data.dateStr is string && data.dateStr.size() <= 50 &&
+             data.timeSlot is string && data.timeSlot.size() <= 50 &&
+             data.status in ['upcoming', 'completed', 'cancelled'];
+    }
+
+    // Test connection doc
+    match /test/{testId} {
+      allow read: if true;
+    }
+
+    // User Profiles & Subcollections
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isSignedIn();
+      allow create: if isOwner(userId) && isValidUserProfile(incoming(), userId);
+      allow update: if (isOwner(userId) || isAdmin()) && isValidUserProfile(incoming(), userId);
+      allow delete: if isAdmin();
+
+      // Subcollection: Mood Logs
+      match /moodLogs/{moodLogId} {
+        allow get, list: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && isValidId(moodLogId) && isValidMoodEntry(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(moodLogId) && isValidMoodEntry(incoming(), userId);
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+
+      // Subcollection: Quiz Results
+      match /quizResults/{quizResultId} {
+        allow get, list: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && isValidId(quizResultId) && isValidQuizResult(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(quizResultId) && isValidQuizResult(incoming(), userId);
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+
+      // Subcollection: Challenge Progress
+      match /challenges/{challengeId} {
+        allow get, list: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && isValidId(challengeId) && isValidChallengeProgress(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(challengeId) && isValidChallengeProgress(incoming(), userId);
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    // Appointments Collection
+    match /appointments/{appointmentId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(appointmentId) && isValidAppointment(incoming());
+      allow update: if isSignedIn() && isValidId(appointmentId) && isValidAppointment(incoming());
+      allow delete: if isSignedIn();
+    }
+
+    // Public / Shared Directory Collections (Read-only for users, write for admin)
+    match /experts/{expertId} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    match /clinics/{clinicId} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    match /admins/{adminId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
+

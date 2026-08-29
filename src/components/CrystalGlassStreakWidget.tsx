@@ -86,8 +86,8 @@ export const CrystalGlassStreakWidget: React.FC<CrystalGlassStreakWidgetProps> =
 
   const palette = AURA_PALETTES[currentPaletteIndex];
 
-  const completed = challengeProgress?.daysCompletedCount ?? 5;
-  const total = challengeProgress?.totalDays ?? 7;
+  const completed = challengeProgress ? challengeProgress.daysCompletedCount : 0;
+  const total = challengeProgress ? challengeProgress.totalDays : 21;
   const streakDisplay = `${completed}/${total}`;
 
   // Dimensions based on size prop

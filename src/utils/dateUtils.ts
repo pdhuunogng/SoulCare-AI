@@ -82,7 +82,7 @@ export function generateInitialRealtimeMoodHistory(totalDays: number = 14): Mood
 
 /**
  * Parses a DD/MM/YYYY date string and optional time into a Date object.
- * Format examples: '29/08/2026', '2026-08-29'
+ * Format examples: '29/08/2026', '2026-08-29', 'Hôm nay, 29/08/2026'
  */
 export function parseDateString(dateStr: string, timeStr?: string): Date {
   try {
@@ -90,16 +90,24 @@ export function parseDateString(dateStr: string, timeStr?: string): Date {
     let month = 0;
     let year = new Date().getFullYear();
 
-    if (dateStr.includes('/')) {
-      const parts = dateStr.split('/');
-      day = parseInt(parts[0], 10) || 1;
-      month = (parseInt(parts[1], 10) || 1) - 1;
-      year = parseInt(parts[2], 10) || new Date().getFullYear();
-    } else if (dateStr.includes('-')) {
-      const parts = dateStr.split('-');
-      year = parseInt(parts[0], 10) || new Date().getFullYear();
-      month = (parseInt(parts[1], 10) || 1) - 1;
-      day = parseInt(parts[2], 10) || 1;
+    // Check for DD/MM/YYYY or DD/MM pattern
+    const dmyMatch = dateStr.match(/(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?/);
+    if (dmyMatch) {
+      day = parseInt(dmyMatch[1], 10) || 1;
+      month = (parseInt(dmyMatch[2], 10) || 1) - 1;
+      if (dmyMatch[3]) {
+        let y = parseInt(dmyMatch[3], 10);
+        if (y < 100) y += 2000;
+        year = y;
+      }
+    } else {
+      // Try YYYY-MM-DD
+      const ymdMatch = dateStr.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+      if (ymdMatch) {
+        year = parseInt(ymdMatch[1], 10) || new Date().getFullYear();
+        month = (parseInt(ymdMatch[2], 10) || 1) - 1;
+        day = parseInt(ymdMatch[3], 10) || 1;
+      }
     }
 
     let hours = 23;
@@ -117,6 +125,35 @@ export function parseDateString(dateStr: string, timeStr?: string): Date {
   } catch {
     return new Date();
   }
+}
+
+/**
+ * Prioritizes and sorts appointments:
+ * 1. Upcoming appointments come first, sorted chronologically ascending (closest upcoming first)
+ * 2. Completed appointments next, sorted descending (most recent first)
+ * 3. Cancelled appointments last
+ */
+export function sortAppointmentsByUpcoming(appointments: Appointment[]): Appointment[] {
+  return [...appointments].sort((a, b) => {
+    const statusOrder: Record<string, number> = { upcoming: 1, completed: 2, cancelled: 3 };
+    const orderA = statusOrder[a.status] || 99;
+    const orderB = statusOrder[b.status] || 99;
+
+    if (orderA !== orderB) {
+      return orderA - orderB;
+    }
+
+    const timeA = parseDateString(a.dateStr, a.timeSlot).getTime();
+    const timeB = parseDateString(b.dateStr, b.timeSlot).getTime();
+
+    if (a.status === 'upcoming') {
+      // Closest upcoming on top
+      return timeA - timeB;
+    } else {
+      // Most recent completed/cancelled on top
+      return timeB - timeA;
+    }
+  });
 }
 
 /**

@@ -52,7 +52,7 @@ async function startServer() {
 
   // API Routes
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", service: "AI RISER VIETNAM 2026 - Tâm An Backend" });
+    res.json({ status: "ok", service: "SoulCare Health Platform Backend" });
   });
 
   // 1. AI Chatbot "Hi" (Trợ Lý Tri Kỷ AI & Điều Phối Viên Chăm Sóc Sức Khỏe Tinh Thần)
@@ -136,7 +136,7 @@ async function startServer() {
       }
 
       const systemInstruction = `[ROLE & CONTEXT]
-Bạn là "Hi" - Trợ Lý Tri Kỷ AI & Điều Phối Viên Chăm Sóc Sức Khỏe Tinh Thần trên nền tảng AI Riser.
+Bạn là "Hi" - Trợ Lý Tri Kỷ AI & Điều Phối Viên Chăm Sóc Sức Khỏe Tinh Thần trên nền tảng SoulCare.
 Mục tiêu: Đồng hành, lắng nghe không phán xét, giải đáp thắc mắc về ghi chú Recap của Chuyên gia, và đề xuất các Gói Đồng Hành Điều Trị phù hợp với ngân sách của người dùng sau buổi tư vấn miễn phí đầu tiên.
 
 [ETHICAL & MEDICAL GUARDRAILS - BẮT BUỘC]
@@ -648,7 +648,7 @@ Triệu chứng mô tả: ${userSymptoms || "Áp lực công việc, mất ngủ
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`AI Riser Server running on http://0.0.0.0:${PORT}`);
+    console.log(`SoulCare Server running on http://0.0.0.0:${PORT}`);
   });
 }
 
