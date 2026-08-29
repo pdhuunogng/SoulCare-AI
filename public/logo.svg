@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%" fill="none">
+  <defs>
+    <!-- 1. Challenge Board Soothing Green-Mint Gradient -->
+    <linearGradient id="challengeBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4bbd5e" />
+      <stop offset="48%" stop-color="#5ecba4" />
+      <stop offset="100%" stop-color="#80e5d8" />
+    </linearGradient>
+
+    <!-- 2. Translucent White Glass Sphere Body -->
+    <radialGradient id="orbGlassGrad" cx="38%" cy="36%" r="65%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85" />
+      <stop offset="35%" stop-color="#ffffff" stop-opacity="0.45" />
+      <stop offset="70%" stop-color="#ffffff" stop-opacity="0.18" />
+      <stop offset="92%" stop-color="#ffffff" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.8" />
+    </radialGradient>
+
+    <!-- 3. Top-Left Specular Reflection -->
+    <linearGradient id="orbSpecGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- 4. Bottom Caustic Rim Reflection -->
+    <linearGradient id="bottomReflectGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.8" />
+      <stop offset="60%" stop-color="#ffffff" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- 5. Outer Atmospheric Aura -->
+    <radialGradient id="orbAuraGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.4" />
+      <stop offset="60%" stop-color="#e0fff8" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- 6. Soft Drop Glow Filter -->
+    <filter id="orbGlowFilter" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#1b6e3d" flood-opacity="0.15" />
+    </filter>
+  </defs>
+
+  <!-- 1. Green Gradient Background (Challenge Board Theme) -->
+  <rect
+    x="2"
+    y="2"
+    width="96"
+    height="96"
+    rx="26"
+    fill="url(#challengeBgGrad)"
+  />
+
+  <!-- Ambient background light wave -->
+  <circle cx="85" cy="18" r="28" fill="#ffffff" fill-opacity="0.15" />
+
+  <!-- 2. Outer Soft Luminous Aura around the Orb -->
+  <circle cx="50" cy="50" r="36" fill="url(#orbAuraGrad)" />
+
+  <!-- 3. The Glassy Translucent White Chatbot Crystal Orb -->
+  <g filter="url(#orbGlowFilter)">
+    <!-- Main Translucent Glass Sphere -->
+    <circle
+      cx="50"
+      cy="50"
+      r="26.5"
+      fill="url(#orbGlassGrad)"
+      stroke="#ffffff"
+      stroke-width="1.2"
+      stroke-opacity="0.75"
+    />
+
+    <!-- Inner Glass Depth Shadow/Refraction -->
+    <ellipse
+      cx="50"
+      cy="53"
+      rx="22"
+      ry="19"
+      fill="#ffffff"
+      fill-opacity="0.12"
+    />
+
+    <!-- Bottom Caustic Reflection Arc -->
+    <path
+      d="M 33 63 C 38 72, 62 72, 67 63"
+      stroke="url(#bottomReflectGrad)"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      fill="none"
+    />
+
+    <!-- Top-Left Glossy Crescent Reflection -->
+    <path
+      d="M 32 42 C 34 32, 45 27, 56 28 C 47 29, 38 34, 35 44 Z"
+      fill="url(#orbSpecGrad)"
+    />
+    <circle cx="39" cy="35" r="2" fill="#ffffff" fill-opacity="0.9" />
+
+    <!-- 4. Chatbot Face (Translucent Glowing White Eyes & Smile) -->
+    <!-- Left Eye -->
+    <circle cx="43" cy="48" r="2.8" fill="#ffffff" />
+    <circle cx="42.2" cy="47.2" r="0.9" fill="#59be68" fill-opacity="0.6" />
+
+    <!-- Right Eye -->
+    <circle cx="57" cy="48" r="2.8" fill="#ffffff" />
+    <circle cx="56.2" cy="47.2" r="0.9" fill="#59be68" fill-opacity="0.6" />
+
+    <!-- Cute Warm Smile -->
+    <path
+      d="M 46.5 54 C 48.5 56.8, 51.5 56.8, 53.5 54"
+      stroke="#ffffff"
+      stroke-width="1.8"
+      stroke-linecap="round"
+      fill="none"
+    />
+
+    <!-- Chatbot Sparkle / AI Glint on Top Right -->
+    <path
+      d="M 68 28 Q 68 32 72 32 Q 68 32 68 36 Q 68 32 64 32 Q 68 32 68 28 Z"
+      fill="#ffffff"
+      fill-opacity="0.95"
+    />
+    <!-- Tiny Sparkle bottom left -->
+    <path
+      d="M 28 66 Q 28 68.5 30.5 68.5 Q 28 68.5 28 71 Q 28 68.5 25.5 68.5 Q 28 68.5 28 66 Z"
+      fill="#ffffff"
+      fill-opacity="0.8"
+    />
+  </g>
+</svg>

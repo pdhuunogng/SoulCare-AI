@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+:root {
+  --font-sans: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --bg-app: #f6fbf0;
+  --surface: #f7faf8;
+  --surface-low: #f0f5ea;
+  --surface-container: #eaf0e5;
+  --surface-high: #e4eadf;
+  --on-surface: #181d16;
+  --on-surface-variant: #3f4a3d;
+  --primary: #006e22;
+  --primary-container: #67c76c;
+  --primary-gradient-end: #c4f7f4;
+  --sage-green: #4a6551;
+  --soft-mint: #e0f2f1;
+  --outline: #becab9;
+}
+
+body {
+  font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #0f172a;
+  color: #181d16;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(103, 199, 108, 0.25);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(103, 199, 108, 0.5);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Glassmorphism utility */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(223, 228, 217, 0.8);
+}
+
+.glass-panel-dark {
+  background: rgba(24, 29, 22, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(63, 74, 61, 0.4);
+}

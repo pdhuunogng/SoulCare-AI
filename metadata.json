@@ -1,0 +1,7 @@
+{
+  "name": "SoulCare",
+  "description": "Nền tảng chăm sóc sức khỏe tinh thần, trị liệu đa chiều, AI Companion thấu cảm và hệ thống widget iOS/Android phong cách quả cầu pha lê.",
+  "requestFramePermissions": ["microphone", "geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
