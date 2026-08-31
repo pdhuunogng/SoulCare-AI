@@ -16,7 +16,6 @@ import {
   DEFAULT_SOS_BUDDY,
   MOCK_APPOINTMENTS,
 } from './data/initialData';
-import { DeviceFrame } from './components/DeviceFrame';
 import { HomeDashboardView } from './components/HomeDashboardView';
 import { ChatbotView } from './components/ChatbotView';
 import { HealingHubView } from './components/HealingHubView';
@@ -34,6 +33,11 @@ import { DraggableVerticalFloat } from './components/DraggableVerticalFloat';
 import { isPastAppointment } from './utils/dateUtils';
 import {
   ShieldAlert,
+  Home,
+  Headphones,
+  Calendar,
+  MessageCircle,
+  User,
 } from 'lucide-react';
 import { audioSynth } from './utils/audioSynth';
 import { useFirebase } from './context/FirebaseContext';
@@ -58,9 +62,6 @@ import {
 export default function App() {
   const { user, isAuthModalOpen, setIsAuthModalOpen } = useFirebase();
 
-  // OS Platform Simulation ('ios' | 'android' | 'responsive')
-  const [platform, setPlatform] = useState<'ios' | 'android' | 'responsive'>('ios');
-
   // Role: 'user' | 'expert' | 'admin'
   const [role, setRole] = useState<UserRole>('user');
 
@@ -70,16 +71,16 @@ export default function App() {
   // Orb Theme Color (Mint, Amber, Lavender, Rose, Ocean)
   const [currentOrbTheme, setCurrentOrbTheme] = useState<OrbThemeColor>('mint');
 
-  // User Profile state (Defaults to clean state for new user / visitor)
+  // User Profile state
   const [userName, setUserName] = useState<string>('Người dùng SoulCare');
   const [sosBuddy, setSosBuddy] = useState<SOSBuddy>(DEFAULT_SOS_BUDDY);
 
-  // Quiz state (Reset / empty for new users)
+  // Quiz state
   const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
   const [quizHistory, setQuizHistory] = useState<QuizResult[]>([]);
   const [isQuizOpen, setIsQuizOpen] = useState(false);
 
-  // All Mood History (Clean for new users, populated via Firestore on login)
+  // All Mood History
   const [allMoodHistory, setAllMoodHistory] = useState<MoodEntry[]>(() => {
     try {
       const stored = localStorage.getItem('soulcare_all_mood_history_v2');
@@ -95,13 +96,13 @@ export default function App() {
     return [];
   });
 
-  // 7-day Mood Map state (Synchronized with allMoodHistory or empty)
+  // 7-day Mood Map state
   const [moodMap, setMoodMap] = useState<MoodEntry[]>(() => allMoodHistory.slice(-7));
 
-  // Challenge progress state (Clean / unstarted for new users)
+  // Challenge progress state
   const [challengeProgress, setChallengeProgress] = useState<UserChallengeProgress | null>(null);
 
-  // Appointments state (Clean for new users)
+  // Appointments state
   const [appointments, setAppointments] = useState<Appointment[]>([]);
 
   // Modals state
@@ -111,12 +112,30 @@ export default function App() {
   const [preSessionAppointment, setPreSessionAppointment] = useState<Appointment | null>(null);
   const [reviewingExpert, setReviewingExpert] = useState<ExpertProfile | null>(null);
 
+  // Danh sách nút Bottom Navigation theo Role
+  const userNavItems = [
+    { id: 'home', label: 'Trang chủ', icon: Home },
+    { id: 'healing', label: 'Trị liệu', icon: Headphones },
+    { id: 'booking', label: 'Đặt lịch', icon: Calendar },
+    { id: 'chat', label: 'Trợ lý AI', icon: MessageCircle },
+    { id: 'profile', label: 'Cá nhân', icon: User },
+  ] as const;
+
+  const expertNavItems = [
+    { id: 'home', label: 'Trang chủ', icon: Home },
+    { id: 'booking', label: 'Lịch khám', icon: Calendar },
+    { id: 'healing', label: 'Trị liệu', icon: Headphones },
+    { id: 'chat', label: 'Trợ lý AI', icon: MessageCircle },
+    { id: 'profile', label: 'Cá nhân', icon: User },
+  ] as const;
+
+  const navItems = role === 'expert' ? expertNavItems : userNavItems;
+
   // ==========================================
   // REAL-TIME FIRESTORE SYNCHRONIZATION HOOKS
   // ==========================================
   useEffect(() => {
     if (!user) {
-      // When not logged in or logged out: Reset all user-specific data to clean state
       setAllMoodHistory([]);
       setMoodMap([]);
       setQuizResult(null);
@@ -132,14 +151,12 @@ export default function App() {
       return;
     }
 
-    // When logged in: Update display name from Firebase auth
     if (user.displayName) {
       setUserName(user.displayName);
     } else if (user.email) {
       setUserName(user.email.split('@')[0]);
     }
 
-    // 0. Subscribe to User Profile in Firestore
     const unsubProfile = subscribeUserProfile(user.uid, (profile) => {
       if (profile) {
         if (profile.role) setRole(profile.role);
@@ -149,7 +166,6 @@ export default function App() {
       }
     });
 
-    // 1. Subscribe to Mood Logs in Firestore (New users will start with empty array)
     const unsubMood = subscribeMoodLogs(user.uid, (entries) => {
       setAllMoodHistory(entries || []);
       setMoodMap((entries || []).slice(-7));
@@ -164,24 +180,20 @@ export default function App() {
       }
     });
 
-    // 2. Subscribe to Quiz Results in Firestore
     const unsubQuiz = subscribeQuizResults(user.uid, (results) => {
       setQuizHistory(results || []);
       setQuizResult(results && results.length > 0 ? results[results.length - 1] : null);
     });
 
-    // 3. Subscribe to Challenge Progress in Firestore
     const unsubChallenge = subscribeUserChallenges(user.uid, (progress) => {
       setChallengeProgress(progress || null);
     });
 
-    // 4. Subscribe to Appointments in Firestore
     const unsubAppointments = (role === 'expert')
       ? subscribeAllAppointments((serverAppts) => {
           if (serverAppts && serverAppts.length > 0) {
             setAppointments(serverAppts);
           } else {
-            // Seed a few initial demo appointments for the doctor if none exist in Firestore
             setAppointments([
               {
                 id: 'apt-exp-1',
@@ -215,27 +227,6 @@ export default function App() {
                 status: 'upcoming',
                 userNotes: 'Hội chứng kiệt sức công sở (Burnout), mất tập trung và muốn tìm lại năng lượng tích cực.',
               },
-              {
-                id: 'apt-exp-3',
-                type: 'online',
-                userId: 'user_3',
-                userName: 'Lê Hoàng Yến',
-                expertId: INITIAL_EXPERTS[0].id,
-                expertName: INITIAL_EXPERTS[0].name,
-                expertTitle: INITIAL_EXPERTS[0].title,
-                expertAvatar: INITIAL_EXPERTS[0].avatar,
-                dateStr: new Date(Date.now() - 86400000).toLocaleDateString('vi-VN'),
-                timeSlot: '20:00 - 21:00',
-                googleMeetLink: 'https://meet.google.com/air-rise-taman',
-                googleCalendarSynced: false,
-                status: 'completed',
-                userNotes: 'Khủng hoảng mối quan hệ và cảm giác cô đơn kéo dài.',
-                doctorRecap: {
-                  formattedRecap: `Chào Lê Hoàng Yến, cảm ơn bạn đã dành thời gian chia sẻ cùng Bác sĩ trong buổi tư vấn hôm qua:\n\n1. 🌟 Đánh giá & Lắng nghe:\n- Ghi nhận bạn đang trải qua cảm giác cô đơn và mất kết nối sau biến cố tình cảm.\n- Bạn đã có nhận thức rất tốt về ranh giới cá nhân và mong muốn chữa lành.\n\n2. 🛠️ Lời khuyên & Bài tập về nhà:\n- Thực hành bài tập viết thư xả cảm xúc không gửi (15 phút mỗi tối).\n- Thực hành thở 4-7-8 trước khi đi ngủ.\n\n3. 📅 Lời nhắn từ Chuyên gia:\n- Hãy kiên nhẫn và bao dung với chính mình. Hẹn gặp lại bạn ở buổi tiếp theo!`,
-                  sentAt: new Date(Date.now() - 86400000).toLocaleDateString('vi-VN'),
-                  isApproved: true,
-                },
-              },
             ]);
           }
         })
@@ -256,14 +247,11 @@ export default function App() {
     };
   }, [user, role]);
 
-  // Handler to update mood map and persist to full history + Firestore
   const handleUpdateMoodMap = (updated7Days: MoodEntry[]) => {
     setMoodMap(updated7Days);
     setAllMoodHistory((prev) => {
       const mapByDate = new Map<string, MoodEntry>();
-      // Put existing history
       prev.forEach((entry) => mapByDate.set(entry.date, entry));
-      // Overwrite/insert with updated 7 days
       updated7Days.forEach((entry) => mapByDate.set(entry.date, entry));
       const newAll = Array.from(mapByDate.values()).sort(
         (a, b) => (a.timestamp || new Date(a.date).getTime()) - (b.timestamp || new Date(b.date).getTime())
@@ -276,7 +264,6 @@ export default function App() {
       return newAll;
     });
 
-    // Sync to Firestore if user is authenticated
     if (user) {
       updated7Days.forEach((entry) => {
         saveMoodLog(user.uid, entry);
@@ -284,7 +271,6 @@ export default function App() {
     }
   };
 
-  // Handler to update or append to the entire history + Firestore
   const handleUpdateAllMoodHistory = (newHistory: MoodEntry[]) => {
     const sorted = [...newHistory].sort(
       (a, b) => (a.timestamp || new Date(a.date).getTime()) - (b.timestamp || new Date(b.date).getTime())
@@ -304,7 +290,6 @@ export default function App() {
     }
   };
 
-  // Challenge streak check-in handler
   const handleCheckInStreak = () => {
     if (!challengeProgress) return;
     const updated: UserChallengeProgress = {
@@ -330,7 +315,6 @@ export default function App() {
     }
   };
 
-  // Handlers
   const handleCompleteQuiz = (res: QuizResult) => {
     setQuizResult(res);
     setQuizHistory((prev) => [...prev, res]);
@@ -354,9 +338,7 @@ export default function App() {
   };
 
   const handleCancelAppointment = (appointmentId: string, _reason?: string) => {
-    // Xóa hoàn toàn lịch hẹn đã hủy khỏi bộ nhớ dữ liệu và giao diện
     setAppointments((prev) => prev.filter((a) => a.id !== appointmentId));
-    // If preSessionAppointment is the cancelled one, close it
     setPreSessionAppointment((curr) => (curr?.id === appointmentId ? null : curr));
     if (user) {
       deleteAppointment(appointmentId);
@@ -453,85 +435,123 @@ export default function App() {
     }
   };
 
-
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-0 sm:p-4 selection:bg-emerald-500 selection:text-slate-950 font-sans">
-      {/* Device Frame Simulator */}
+    <div className="min-h-screen w-full bg-[#f6fbf0] text-[#181d16] flex flex-col items-center justify-start p-0 selection:bg-emerald-500 selection:text-slate-950 font-sans">
+      {/* 1. MÀN HÌNH ĐĂNG NHẬP / AUTH GATE (FULL WIDTH TRÀN VIỀN NỀN XANH NHẸ) */}
       {!user ? (
-        <DeviceFrame
-          platform={platform}
-          onPlatformChange={setPlatform}
-          currentTab="home"
-          onTabChange={() => {}}
-          role="user"
-          onRoleChange={() => {}}
-          currentOrbTheme={currentOrbTheme}
-          hideNav={true}
-        >
-          <AuthGateView onAuthSuccess={() => setCurrentTab('home')} />
-        </DeviceFrame>
+        <div className="w-full min-h-screen bg-[#f6fbf0] text-[#181d16] flex flex-col justify-center items-center p-4 sm:p-8">
+          <div className="w-full max-w-xl">
+            <AuthGateView onAuthSuccess={() => setCurrentTab('home')} />
+          </div>
+        </div>
       ) : (
-        <DeviceFrame
-          platform={platform}
-          onPlatformChange={setPlatform}
-          currentTab={currentTab}
-          onTabChange={setCurrentTab}
-          role={role}
-          onRoleChange={handleRoleChange}
-          currentOrbTheme={currentOrbTheme}
-          hideNav={false}
-        >
-          {/* VIEW 1: HOME DASHBOARD (FOR BOTH USER AND EXPERT) */}
-          {currentTab === 'home' && (
-            <HomeDashboardView
-              role={role}
-              userName={role === 'expert' ? (userName && userName !== 'Người dùng SoulCare' ? userName : 'Chuyên gia') : userName}
-              quizResult={quizResult}
-              moodMap={moodMap}
-              allMoodHistory={allMoodHistory}
-              onUpdateMoodMap={handleUpdateMoodMap}
-              onUpdateAllMoodHistory={handleUpdateAllMoodHistory}
-              challengeProgress={challengeProgress}
-              onUpdateChallengeProgress={handleUpdateChallengeProgress}
-              upcomingAppointments={appointments}
-              onOpenQuiz={() => setIsQuizOpen(true)}
-              onOpenSOS={() => setIsSOSOpen(true)}
-              onOpenBreathing={() => setCurrentTab('healing')}
-              onOpenHealingHub={() => setCurrentTab('healing')}
-              onOpenBooking={() => setCurrentTab('booking')}
-              onOpenPreSession={(apt) => setPreSessionAppointment(apt)}
-              onNavigateToChat={() => setIsAIChatOpen(true)}
-              currentOrbTheme={currentOrbTheme}
-              onChangeOrbTheme={handleOrbThemeChange}
-            />
-          )}
+        /* 2. MÀN HÌNH ỨNG DỤNG CHÍNH KHI ĐÃ ĐĂNG NHẬP (FULL RESPONSIVE TOÀN MÀN HÌNH) */
+        <div className="w-full min-h-screen bg-[#f6fbf0] text-[#181d16] flex flex-col relative pb-20 overflow-x-hidden">
+          
+          {/* VÙNG NỘI DUNG CHÍNH CÁC TAB */}
+          <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-8 py-4 overflow-y-auto overflow-x-hidden flex flex-col relative bg-[#f6fbf0]">
+            {/* VIEW 1: HOME DASHBOARD */}
+            {currentTab === 'home' && (
+              <HomeDashboardView
+                role={role}
+                userName={role === 'expert' ? (userName && userName !== 'Người dùng SoulCare' ? userName : 'Chuyên gia') : userName}
+                quizResult={quizResult}
+                moodMap={moodMap}
+                allMoodHistory={allMoodHistory}
+                onUpdateMoodMap={handleUpdateMoodMap}
+                onUpdateAllMoodHistory={handleUpdateAllMoodHistory}
+                challengeProgress={challengeProgress}
+                onUpdateChallengeProgress={handleUpdateChallengeProgress}
+                upcomingAppointments={appointments}
+                onOpenQuiz={() => setIsQuizOpen(true)}
+                onOpenSOS={() => setIsSOSOpen(true)}
+                onOpenBreathing={() => setCurrentTab('healing')}
+                onOpenHealingHub={() => setCurrentTab('healing')}
+                onOpenBooking={() => setCurrentTab('booking')}
+                onOpenPreSession={(apt) => setPreSessionAppointment(apt)}
+                onNavigateToChat={() => setIsAIChatOpen(true)}
+                currentOrbTheme={currentOrbTheme}
+                onChangeOrbTheme={handleOrbThemeChange}
+              />
+            )}
 
-          {/* VIEW 2: AI COMPANION CHATBOT */}
-          {currentTab === 'chat' && (
-            <ChatbotView
-              userName={userName}
-              quizResult={quizResult}
-              moodMap={moodMap}
-              challengeProgress={challengeProgress}
-              latestAppointment={appointments[0] || null}
-              sosBuddy={sosBuddy}
-              onNavigateToBreathing={() => setCurrentTab('healing')}
-              onNavigateToHealingHub={() => setCurrentTab('healing')}
-              onNavigateToBooking={() => setCurrentTab('booking')}
-              onNavigateToStreak={() => setCurrentTab('home')}
-              onViewCarePlans={() => setIsCarePlansOpen(true)}
-              onTriggerSOS={() => setIsSOSOpen(true)}
-            />
-          )}
+            {/* VIEW 2: AI COMPANION CHATBOT */}
+            {currentTab === 'chat' && (
+              <ChatbotView
+                userName={userName}
+                quizResult={quizResult}
+                moodMap={moodMap}
+                challengeProgress={challengeProgress}
+                latestAppointment={appointments[0] || null}
+                sosBuddy={sosBuddy}
+                onNavigateToBreathing={() => setCurrentTab('healing')}
+                onNavigateToHealingHub={() => setCurrentTab('healing')}
+                onNavigateToBooking={() => setCurrentTab('booking')}
+                onNavigateToStreak={() => setCurrentTab('home')}
+                onViewCarePlans={() => setIsCarePlansOpen(true)}
+                onTriggerSOS={() => setIsSOSOpen(true)}
+              />
+            )}
 
-          {/* VIEW 3: HEALING HUB */}
-          {currentTab === 'healing' && (
-            <HealingHubView initialBreathingOpen={false} />
-          )}
+            {/* VIEW 3: HEALING HUB */}
+            {currentTab === 'healing' && (
+              <HealingHubView initialBreathingOpen={false} />
+            )}
 
-          {/* VIEW 4: BOOKING / EXPERT DASHBOARD (IF ROLE IS EXPERT, LỊCH KHÁM RENDERS EXPERT DASHBOARD) */}
-          {currentTab === 'booking' && (
-            role === 'expert' ? (
+            {/* VIEW 4: BOOKING / EXPERT DASHBOARD */}
+            {currentTab === 'booking' && (
+              role === 'expert' ? (
+                <ExpertDashboard
+                  expertProfile={INITIAL_EXPERTS[0]}
+                  appointments={appointments}
+                  onUpdateAppointmentRecap={handleUpdateAppointmentRecap}
+                  onCompleteAppointment={handleCompleteAppointment}
+                  onLaunchPreSession={(apt) => setPreSessionAppointment(apt)}
+                  onAddAppointment={handleBookAppointment}
+                  onDeleteAppointment={handleCancelAppointment}
+                  currentUserName={userName}
+                  currentUserEmail={user?.email || undefined}
+                />
+              ) : (
+                <BookingView
+                  onBookAppointment={handleBookAppointment}
+                  onCancelAppointment={handleCancelAppointment}
+                  onOpenReviewModal={(exp) => setReviewingExpert(exp)}
+                  onOpenPreSession={(apt) => setPreSessionAppointment(apt)}
+                  existingAppointments={appointments}
+                  userQuizRadar={
+                    quizResult
+                      ? `Trầm cảm ${quizResult.depressionPct}%, Lo âu ${quizResult.anxietyPct}%, Stress ${quizResult.stressPct}%, Giấc ngủ ${quizResult.sleepPct}%`
+                      : undefined
+                  }
+                />
+              )
+            )}
+
+            {/* VIEW 5: PROFILE */}
+            {currentTab === 'profile' && (
+              <ProfileView
+                currentRole={role}
+                onRoleChange={handleRoleChange}
+                userName={userName}
+                onUpdateUserName={handleUpdateUserName}
+                sosBuddy={sosBuddy}
+                onUpdateSOSBuddy={handleUpdateSOSBuddy}
+                quizHistory={quizHistory}
+                challengeProgress={challengeProgress}
+                onOpenQuiz={() => setIsQuizOpen(true)}
+                onOpenSOS={() => setIsSOSOpen(true)}
+                onCheckInStreak={handleCheckInStreak}
+                onOpenBreathing={() => setCurrentTab('healing')}
+                onOpenHealingHub={() => setCurrentTab('healing')}
+                onNavigateToChallenge={() => setCurrentTab('home')}
+                currentOrbTheme={currentOrbTheme}
+                onChangeOrbTheme={handleOrbThemeChange}
+              />
+            )}
+
+            {/* VIEW 6: EXPERT DASHBOARD (FALLBACK) */}
+            {currentTab === 'expert-dash' && (
               <ExpertDashboard
                 expertProfile={INITIAL_EXPERTS[0]}
                 appointments={appointments}
@@ -543,60 +563,10 @@ export default function App() {
                 currentUserName={userName}
                 currentUserEmail={user?.email || undefined}
               />
-            ) : (
-              <BookingView
-                onBookAppointment={handleBookAppointment}
-                onCancelAppointment={handleCancelAppointment}
-                onOpenReviewModal={(exp) => setReviewingExpert(exp)}
-                onOpenPreSession={(apt) => setPreSessionAppointment(apt)}
-                existingAppointments={appointments}
-                userQuizRadar={
-                  quizResult
-                    ? `Trầm cảm ${quizResult.depressionPct}%, Lo âu ${quizResult.anxietyPct}%, Stress ${quizResult.stressPct}%, Giấc ngủ ${quizResult.sleepPct}%`
-                    : undefined
-                }
-              />
-            )
-          )}
+            )}
+          </main>
 
-          {/* VIEW 5: PROFILE & BUSINESS SETTINGS */}
-          {currentTab === 'profile' && (
-            <ProfileView
-              currentRole={role}
-              onRoleChange={handleRoleChange}
-              userName={userName}
-              onUpdateUserName={handleUpdateUserName}
-              sosBuddy={sosBuddy}
-              onUpdateSOSBuddy={handleUpdateSOSBuddy}
-              quizHistory={quizHistory}
-              challengeProgress={challengeProgress}
-              onOpenQuiz={() => setIsQuizOpen(true)}
-              onOpenSOS={() => setIsSOSOpen(true)}
-              onCheckInStreak={handleCheckInStreak}
-              onOpenBreathing={() => setCurrentTab('healing')}
-              onOpenHealingHub={() => setCurrentTab('healing')}
-              onNavigateToChallenge={() => setCurrentTab('home')}
-              currentOrbTheme={currentOrbTheme}
-              onChangeOrbTheme={handleOrbThemeChange}
-            />
-          )}
-
-          {/* VIEW 6: EXPERT DASHBOARD (FALLBACK) */}
-          {currentTab === 'expert-dash' && (
-            <ExpertDashboard
-              expertProfile={INITIAL_EXPERTS[0]}
-              appointments={appointments}
-              onUpdateAppointmentRecap={handleUpdateAppointmentRecap}
-              onCompleteAppointment={handleCompleteAppointment}
-              onLaunchPreSession={(apt) => setPreSessionAppointment(apt)}
-              onAddAppointment={handleBookAppointment}
-              onDeleteAppointment={handleCancelAppointment}
-              currentUserName={userName}
-              currentUserEmail={user?.email || undefined}
-            />
-          )}
-
-          {/* FLOATING GLASS EMOTION ORB & AI CHATBOT OVERLAY (QUẢ CẦU CẢM XÚC THỦY TINH NỔI STITCH) - ẨN KHI Ở TAB TRỢ LÝ AI */}
+          {/* FLOATING GLASS EMOTION ORB (ẨN KHI Ở TAB CHAT) */}
           {currentTab !== 'chat' && (
             <EmotionOrbChatbot
               userName={userName}
@@ -618,7 +588,7 @@ export default function App() {
             />
           )}
 
-          {/* FLOATING EMERGENCY SOS BUTTON (WITH VERTICAL DRAGGING) */}
+          {/* FLOATING EMERGENCY SOS BUTTON (HỖ TRỢ KÉO TRƯỢT DỌC) */}
           <DraggableVerticalFloat
             side="left"
             storageKey="soulcare_sos_float_pos_y"
@@ -635,11 +605,46 @@ export default function App() {
               <ShieldAlert className="w-4 h-4 text-white animate-pulse" />
             </div>
           </DraggableVerticalFloat>
-        </DeviceFrame>
+
+          {/* THANH BOTTOM NAVIGATION CỐ ĐỊNH CHÂN TRANG (FULL WIDTH CO GIÃN THEO KHUNG) */}
+          <nav className="fixed bottom-0 left-0 right-0 z-30 mx-auto w-full max-w-5xl bg-white/95 backdrop-blur-md border-t border-[#dfe4d9] px-4 py-2 flex items-center justify-around shadow-lg">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = currentTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    audioSynth.playChime(520, 0.15);
+                    setCurrentTab(item.id as any);
+                  }}
+                  className={`flex flex-col items-center justify-center gap-0.5 py-1 px-4 rounded-2xl transition-all duration-200 ${
+                    isActive
+                      ? 'bg-[#d6f5df] text-[#005116] font-bold scale-105 shadow-sm border border-[#67c76c]/30'
+                      : 'text-[#4a6551] hover:text-[#181d16]'
+                  }`}
+                >
+                  <Icon
+                    className={`w-4 h-4 ${
+                      isActive ? 'text-[#006e22] stroke-[2.5]' : 'text-[#4a6551]'
+                    }`}
+                  />
+                  <span
+                    className={`text-[11px] tracking-tight ${
+                      isActive ? 'text-[#005116] font-black' : 'text-[#4a6551] font-medium'
+                    }`}
+                  >
+                    {item.label}
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
       )}
 
-      {/* MODALS */}
-      {/* 1. Multidimensional Mental Health Quiz Modal */}
+      {/* MODALS LIÊN KẾT */}
       <QuizModal
         isOpen={isQuizOpen}
         onClose={() => setIsQuizOpen(false)}
@@ -650,7 +655,6 @@ export default function App() {
         }}
       />
 
-      {/* 2. Emergency SOS Drawer Modal */}
       <SosModal
         isOpen={isSOSOpen}
         onClose={() => setIsSOSOpen(false)}
@@ -661,7 +665,6 @@ export default function App() {
         }}
       />
 
-      {/* 3. Care Plans Modal (Gói Đồng Hành Điều Trị) */}
       <CarePlansModal
         isOpen={isCarePlansOpen}
         onClose={() => setIsCarePlansOpen(false)}
@@ -673,7 +676,6 @@ export default function App() {
         recommendedPlan={appointments[0]?.status === 'completed' ? 'UNTANGLE_3S' : 'STARTER_FREE'}
       />
 
-      {/* 4. Pre-Session Google Meet Briefing Modal */}
       {preSessionAppointment && (
         <PreSessionModal
           isOpen={!!preSessionAppointment}
@@ -684,7 +686,6 @@ export default function App() {
         />
       )}
 
-      {/* 5. Expert Review Modal */}
       {reviewingExpert && (
         <ReviewModal
           isOpen={!!reviewingExpert}
@@ -696,7 +697,6 @@ export default function App() {
         />
       )}
 
-      {/* 6. Firebase Authentication Modal (Google / Email) */}
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}

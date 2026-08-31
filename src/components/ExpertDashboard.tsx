@@ -408,58 +408,28 @@ export const ExpertDashboard: React.FC<ExpertDashboardProps> = ({
 
   return (
     <div className="p-4 space-y-4 pb-28 text-[#181d16] font-sans animate-in fade-in">
-      {/* Header Chuyên Gia */}
-      <div className="p-4 rounded-3xl bg-gradient-to-br from-[#ffffff] to-[#e8f7ee] border border-[#67c76c]/30 shadow-sm space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <img
-                src={expertProfile.avatar}
-                alt={expertProfile.name}
-                className="w-13 h-13 rounded-2xl object-cover ring-2 ring-[#006e22]/40 shadow-sm"
-              />
-              <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#006e22] border-2 border-white rounded-full flex items-center justify-center">
-                <Check className="w-2.5 h-2.5 text-white" />
-              </span>
-            </div>
-            <div>
-              <h2 className="text-base font-extrabold text-[#181d16] tracking-tight">
-                {currentUserName && currentUserName !== 'Người dùng SoulCare' ? currentUserName : expertProfile.name}
-              </h2>
-              <p className="text-xs text-[#4a5548] mt-0.5 font-medium">{expertProfile.title}</p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              audioSynth.playChime(520, 0.2);
-              setIsSchedulingOpen(true);
-            }}
-            className="py-2 px-3 rounded-2xl bg-[#006e22] hover:bg-[#005116] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition active:scale-95"
-          >
-            <CalendarPlus className="w-3.5 h-3.5" />
-            <span>+ Lên Lịch Ca Mới</span>
-          </button>
+      {/* Header Lịch Khám & Nút Thao Tác (Đã lược bỏ profile chuyên gia) */}
+      <div className="flex items-center justify-between gap-3 pt-1">
+        <div>
+          <h2 className="text-lg font-bold text-[#181d16] tracking-tight">
+            Lịch Khám & Quản Lý Ca
+          </h2>
+          <p className="text-xs text-[#6f7a6c]">
+            {appointments.length} ca tư vấn • {pendingRecapAppointments.length > 0 ? `${pendingRecapAppointments.length} ca chờ recap` : 'Đã hoàn tất recap'}
+          </p>
         </div>
 
-        {/* Quick KPI Bar */}
-        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#dfe4d9]/70 text-center">
-          <div className="p-2 rounded-2xl bg-[#ffffff]/90 border border-[#dfe4d9]">
-            <span className="text-[10px] text-[#6f7a6c] block">Tổng Ca Khám</span>
-            <span className="text-sm font-extrabold text-[#181d16]">{appointments.length}</span>
-          </div>
-          <div className="p-2 rounded-2xl bg-[#ffffff]/90 border border-[#dfe4d9]">
-            <span className="text-[10px] text-[#6f7a6c] block">Cần Viết Recap</span>
-            <span className={`text-sm font-extrabold ${pendingRecapAppointments.length > 0 ? 'text-[#ba1a1a]' : 'text-[#006e22]'}`}>
-              {pendingRecapAppointments.length}
-            </span>
-          </div>
-          <div className="p-2 rounded-2xl bg-[#ffffff]/90 border border-[#dfe4d9]">
-            <span className="text-[10px] text-[#6f7a6c] block">Đã Gửi Recap</span>
-            <span className="text-sm font-extrabold text-[#006e22]">{completedRecapCount}</span>
-          </div>
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            audioSynth.playChime(520, 0.2);
+            setIsSchedulingOpen(true);
+          }}
+          className="py-2 px-3.5 rounded-2xl bg-[#006e22] hover:bg-[#005116] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition active:scale-95"
+        >
+          <CalendarPlus className="w-4 h-4" />
+          <span>+ Lên Lịch Ca Mới</span>
+        </button>
       </div>
 
       {/* 3 Main Functional Tabs for Expert */}

@@ -760,7 +760,7 @@ export const INITIAL_SOUND_TRACKS: SoundTrack[] = [
   // 1. #GiảmCăngThẳng (Stress Relief & Harmony)
   {
     id: 'snd-1',
-    title: '432Hz Sanctuary: Sóng Biển Hoàng Hôn & Dương Cầm Dịu Êm',
+    title: '432Hz Sóng Biển & Dương Cầm',
     tag: '#GiảmCăngThẳng',
     tagLabel: 'Giảm Căng Thẳng',
     frequency: '432 Hz',
@@ -773,7 +773,7 @@ export const INITIAL_SOUND_TRACKS: SoundTrack[] = [
   },
   {
     id: 'snd-5',
-    title: '528Hz Theta Sanctuary: Tiếng Suối Rừng Xanh & Tái Tạo Năng Lượng',
+    title: '528Hz Suối Rừng & Tái Tạo Năng Lượng',
     tag: '#GiảmCăngThẳng',
     tagLabel: 'Giảm Căng Thẳng',
     frequency: '528 Hz Solfeggio',
@@ -786,7 +786,7 @@ export const INITIAL_SOUND_TRACKS: SoundTrack[] = [
   },
   {
     id: 'snd-6',
-    title: 'Serene Healing: 396Hz Gió Ngàn Bình Yên & Đàn Tranh Thanh Thoát',
+    title: '396Hz Gió Núi & Đàn Tranh',
     tag: '#GiảmCăngThẳng',
     tagLabel: 'Giảm Căng Thẳng',
     frequency: '396 Hz Solfeggio',
@@ -799,7 +799,7 @@ export const INITIAL_SOUND_TRACKS: SoundTrack[] = [
   },
   {
     id: 'snd-7',
-    title: 'Mưa Rào Tĩnh Lặng & Giọt Nước Mái Hiên Xoa Dịu Thần Kinh',
+    title: 'Mưa Rào & Giọt Nước Mái Hiên',
     tag: '#GiảmCăngThẳng',
     tagLabel: 'Giảm Căng Thẳng',
     frequency: 'White Noise Filter',
@@ -813,7 +813,7 @@ export const INITIAL_SOUND_TRACKS: SoundTrack[] = [
   // 2. #KhóNgủ (Deep Sleep & Delta Waves)
   {
     id: 'snd-2',
-    title: 'Deep Delta Sleep: Sóng Não 2Hz & Khúc Mưa Đêm Ru Ngủ Sâu',
+    title: 'Delta 2Hz: Mưa Đêm Ru Ngủ Sâu',
     tag: '#KhóNgủ',
     tagLabel: 'Hỗ Trợ Giấc Ngủ',
     frequency: 'Delta 2 Hz Binaural',
@@ -826,7 +826,7 @@ export const INITIAL_SOUND_TRACKS: SoundTrack[] = [
   },
   {
     id: 'snd-8',
-    title: 'Lửa Trại Rừng Đêm: Tiếng Than Nổ & Đàn Cello Trầm Ấm',
+    title: 'Lửa Trại Rừng Đêm & Cello Trầm',
     tag: '#KhóNgủ',
     tagLabel: 'Hỗ Trợ Giấc Ngủ',
     frequency: 'Pink Noise 1/f',
@@ -838,7 +838,7 @@ export const INITIAL_SOUND_TRACKS: SoundTrack[] = [
   },
   {
     id: 'snd-9',
-    title: 'Slumber Binaural: Sóng Não Delta 0.5Hz Tái Thiết Giấc Ngủ NREM',
+    title: 'Delta 0.5Hz: Tái Thiết Giấc Ngủ',
     tag: '#KhóNgủ',
     tagLabel: 'Hỗ Trợ Giấc Ngủ',
     frequency: 'Delta 0.5 Hz Isochronic',
@@ -851,7 +851,7 @@ export const INITIAL_SOUND_TRACKS: SoundTrack[] = [
   },
   {
     id: 'snd-10',
-    title: 'Đêm Trăng Thanh Vắng: Tiếng Dế Đêm & Gió Ru Miền Quê An Yên',
+    title: 'Đêm Trăng: Tiếng Dế & Gió Ru',
     tag: '#KhóNgủ',
     tagLabel: 'Hỗ Trợ Giấc Ngủ',
     frequency: 'FM Nature Synthesis',
@@ -865,7 +865,7 @@ export const INITIAL_SOUND_TRACKS: SoundTrack[] = [
   // 3. #TậpTrung (Focus & Alpha Wave Flow)
   {
     id: 'snd-3',
-    title: 'Alpha Focus Flow: Sóng Não 10Hz & Tiếng Gió Rừng Tăng Tập Trung',
+    title: 'Alpha 10Hz: Gió Rừng Tập Trung',
     tag: '#TậpTrung',
     tagLabel: 'Tập Trung & Sáng Tạo',
     frequency: 'Alpha 10 Hz Binaural',
@@ -878,7 +878,7 @@ export const INITIAL_SOUND_TRACKS: SoundTrack[] = [
   },
   {
     id: 'snd-11',
-    title: 'Study Session Lofi: Tiếng Đĩa Than & Mưa Chiều Quán Cà Phê',
+    title: 'Study Lofi: Đĩa Than & Mưa Cà Phê',
     tag: '#TậpTrung',
     tagLabel: 'Tập Trung & Sáng Tạo',
     frequency: '65 dB Lofi Acoustics',
@@ -891,7 +891,7 @@ export const INITIAL_SOUND_TRACKS: SoundTrack[] = [
   },
   {
     id: 'snd-12',
-    title: 'Gamma 40Hz Flow: Sóng Não Đột Phá & Kích Hoạt Tư Duy Sáng Tạo',
+    title: 'Gamma 40Hz: Tư Duy Sáng Tạo',
     tag: '#TậpTrung',
     tagLabel: 'Tập Trung & Sáng Tạo',
     frequency: 'Gamma 40 Hz Pulse',
@@ -905,7 +905,7 @@ export const INITIAL_SOUND_TRACKS: SoundTrack[] = [
   // 4. #ThảLỏngTâmTrí (Deep Healing & Meditation)
   {
     id: 'snd-4',
-    title: 'Tibetan Serenity: Tiếng Chuông Xoay Himalaya & Suối Thiền Định Tâm',
+    title: '174Hz Chuông Xoay & Suối Thiền',
     tag: '#ThảLỏngTâmTrí',
     tagLabel: 'Thiền & Thở Sâu',
     frequency: '174 Hz Solfeggio',
@@ -918,7 +918,7 @@ export const INITIAL_SOUND_TRACKS: SoundTrack[] = [
   },
   {
     id: 'snd-13',
-    title: 'Mindful Stream & Bowls: 639Hz Suối Trong & Mở Rộng Luân Xa Tim',
+    title: '639Hz Suối Trong & Chuông Xoay',
     tag: '#ThảLỏngTâmTrí',
     tagLabel: 'Thiền & Thở Sâu',
     frequency: '639 Hz Solfeggio',
@@ -931,7 +931,7 @@ export const INITIAL_SOUND_TRACKS: SoundTrack[] = [
   },
   {
     id: 'snd-14',
-    title: 'Healing Crystal Resonance: 852Hz Âm Thoa Pha Lê Thanh Lọc Tâm Trí',
+    title: '852Hz Âm Thoa Pha Lê Tĩnh Tâm',
     tag: '#ThảLỏngTâmTrí',
     tagLabel: 'Thiền & Thở Sâu',
     frequency: '852 Hz Solfeggio',
@@ -951,7 +951,7 @@ export const INITIAL_PODCASTS: PodcastItem[] = [
   // 1. Google AI Lyria x Medical Narration Podcasts (Đã gắn link audio MP3 nền)
   {
     id: 'pod-1',
-    title: 'Vượt Qua Overthinking: Xả Tải Não Bộ & Bình Yên Trước Giờ Ngủ',
+    title: 'Vượt Qua Overthinking Trước Giờ Ngủ',
     host: 'Google AI Lyria x TS. BS. Nguyễn Minh Anh',
     hostRole: 'Bác sĩ Chuyên khoa Tâm thần kinh & Trị liệu CBT',
     duration: '14:20',
@@ -970,7 +970,7 @@ export const INITIAL_PODCASTS: PodcastItem[] = [
   },
   {
     id: 'pod-2',
-    title: 'Ôm Ấp Đứa Trẻ Bên Trong: Giải Phóng Tổn Thương & Học Cách Tự Yêu Mình',
+    title: 'Ôm Ấp Đứa Trẻ Bên Trong & Yêu Bản Thân',
     host: 'Google AI Lyria x ThS. Trần Phương Thảo',
     hostRole: 'Chuyên gia Tâm lý Trị liệu Gia đình & Trắc ẩn Bản thân',
     duration: '18:45',
@@ -989,7 +989,7 @@ export const INITIAL_PODCASTS: PodcastItem[] = [
   },
   {
     id: 'pod-3',
-    title: 'Sơ Cứu Cơn Hoảng Loạn Panic: Kỹ Thuật Nối Đất & Hạ Nhịp Tim Tức Thì',
+    title: 'Sơ Cứu Cơn Hoảng Loạn (Panic Attack)',
     host: 'Google AI Lyria x BS. CKI Lê Hoàng Nam',
     hostRole: 'Bác sĩ Tâm lý Lâm sàng Bệnh viện Đại học Y Dược',
     duration: '15:10',
@@ -1008,7 +1008,7 @@ export const INITIAL_PODCASTS: PodcastItem[] = [
   },
   {
     id: 'pod-4',
-    title: 'Chữa Lành Burnout Nơi Công Sở: Tái Tạo Năng Lượng & Thiết Lập Ranh Giới',
+    title: 'Chữa Lành Burnout & Tái Tạo Năng Lượng',
     host: 'Google AI Lyria x TS. Tâm lý Đặng Hoàng Giang',
     hostRole: 'Chuyên gia Nghiên cứu Xã hội & Sức khỏe Tâm thần',
     duration: '16:30',
@@ -1027,7 +1027,7 @@ export const INITIAL_PODCASTS: PodcastItem[] = [
   },
   {
     id: 'pod-6',
-    title: 'Dẫn Thiền Thả Lỏng Toàn Thân & Đón Nhận Giấc Ngủ Sâu Tự Nhiên',
+    title: 'Dẫn Thiền Thả Lỏng & Ngủ Sâu Tự Nhiên',
     host: 'Google AI Lyria x BS. CKI Lê Hoàng Nam',
     hostRole: 'Bác sĩ Chuyên khoa Sức khỏe Giấc ngủ (Sleep Medicine)',
     duration: '17:50',
@@ -1046,7 +1046,7 @@ export const INITIAL_PODCASTS: PodcastItem[] = [
   },
   {
     id: 'pod-9',
-    title: 'Nuôi Dưỡng Lòng Tự Trắc Ẩn: Dịu Dàng Với Chính Mình Giữa Biến Động',
+    title: 'Nuôi Dưỡng Lòng Tự Trắc Ẩn Giữa Biến Động',
     host: 'Google AI Lyria x Nhà tham vấn Phan Ý Ly',
     hostRole: 'Thạc sĩ Tâm lý Nghệ thuật & Trị liệu Chánh niệm',
     duration: '13:55',
@@ -1067,7 +1067,7 @@ export const INITIAL_PODCASTS: PodcastItem[] = [
   // 2. Curated YouTube Playlist (SoulCare Healing Station)
   {
     id: 'pod-yt-playlist',
-    title: 'SoulCare Station: Tuyển Tập Podcast & Âm Nhạc Trị Liệu (YouTube Playlist)',
+    title: 'SoulCare Station: Tuyển Tập Trị Liệu',
     host: 'SoulCare Healing Station',
     hostRole: 'Danh Sách Phát Tuyển Chọn Chuẩn Y Khoa & Chánh Niệm',
     duration: 'Nhiều tập',

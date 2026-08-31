@@ -104,9 +104,10 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
 }) => {
   const { user, setIsAuthModalOpen } = useFirebase();
 
-  // Dynamic 7-day calendar window ending today
+  // Dynamic 7-day calendar window ending today (Strict chronological order: 6 days ago up to Today)
   const effectiveMoodMap = useMemo(() => {
     const today = new Date();
+    const todayIso = formatDateIso(today);
     const mapByDate = new Map<string, MoodEntry>();
     (allMoodHistory.length > 0 ? allMoodHistory : moodMap).forEach((m) => {
       mapByDate.set(m.date, m);
@@ -114,17 +115,24 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
 
     const list: MoodEntry[] = [];
     for (let i = 6; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
+      const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i);
       const dateStr = formatDateIso(d);
-      const dayLabel = getVietnameseDayLabel(d);
+      const isToday = dateStr === todayIso;
+      const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+      const dayMonthStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
+      const dayLabel = isToday ? 'Hôm nay' : dayMonthStr;
 
       if (mapByDate.has(dateStr)) {
-        list.push(mapByDate.get(dateStr)!);
+        const existing = mapByDate.get(dateStr)!;
+        list.push({
+          ...existing,
+          date: dateStr,
+          dayLabel,
+        });
       } else {
         list.push({
           date: dateStr,
-          dayLabel: i === 0 ? 'Hôm nay' : dayLabel,
+          dayLabel,
           emotion: 'Chưa ghi nhận',
           note: '',
           tags: [],
@@ -495,11 +503,11 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
     const updated: UserChallengeProgress = {
       challengeId: ch.id,
       challengeTitle: ch.title,
-      currentStreak: 1,
+      currentStreak: 0,
       totalDays: ch.durationDays,
-      daysCompletedCount: 1,
+      daysCompletedCount: 0,
       todayCompleted: false,
-      lastCheckInDate: formatDateIso(new Date()),
+      lastCheckInDate: '',
     };
     onUpdateChallengeProgress(updated);
   };
@@ -695,13 +703,17 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
 
             {/* Weekday Row: Real-time 7 days ending today with custom vector faces */}
             <div className="grid grid-cols-7 gap-1">
-              {moodMap.map((entry, idx) => {
-                const isToday = entry.date === todayIso || idx === moodMap.length - 1;
+              {effectiveMoodMap.map((entry) => {
+                const isToday = entry.date === todayIso;
+                const d = new Date(entry.date);
+                const dayOfWeek = getVietnameseDayLabel(d);
+                const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+                const dayMonthStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
 
                 return (
                   <div key={entry.date} className="flex flex-col items-center gap-1.5">
                     <span className={`text-[11px] font-bold ${isToday ? 'text-[#006e22]' : 'text-[#6f7a6c]'}`}>
-                      {entry.dayLabel}
+                      {isToday ? 'Hôm nay' : dayMonthStr}
                     </span>
 
                     <button
@@ -715,7 +727,7 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
                           ? 'border-2 border-[#006e22] bg-[#e0f5ea] text-[#006e22] ring-2 ring-[#67c76c]/30 shadow-md'
                           : 'bg-[#ffffff] border-[#dfe4d9] text-[#181d16] hover:bg-[#f7faf8]'
                       }`}
-                      title={`${entry.dayLabel} (${entry.date}): ${entry.emotion}`}
+                      title={`${isToday ? 'Hôm nay' : dayMonthStr} (${dayOfWeek}): ${entry.emotion}`}
                     >
                       <EmotionIcon emotion={entry.emotion} size={22} />
                       {isToday && (
@@ -724,8 +736,8 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
                         </span>
                       )}
                     </button>
-                    <span className="text-[9px] text-[#6f7a6c] font-mono truncate max-w-[40px]">
-                      {entry.date.split('-').slice(1).reverse().join('/')}
+                    <span className="text-[9px] text-[#6f7a6c] font-medium">
+                      {isToday ? dayMonthStr : dayOfWeek}
                     </span>
                   </div>
                 );
@@ -868,9 +880,13 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
 
             {/* 7 Interactive Emoji Day Cards (Real-time Dates) */}
             <div className="grid grid-cols-7 gap-1.5 pt-1">
-              {moodMap.map((entry, idx) => {
+              {effectiveMoodMap.map((entry) => {
                 const isSelected = selectedDayDetail?.date === entry.date;
-                const isToday = entry.date === todayIso || idx === moodMap.length - 1;
+                const isToday = entry.date === todayIso;
+                const d = new Date(entry.date);
+                const dayOfWeek = getVietnameseDayLabel(d);
+                const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+                const dayMonthStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
 
                 return (
                   <button
@@ -890,7 +906,9 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
                         HÔM NAY
                       </span>
                     )}
-                    <span className="text-[10px] text-[#6f7a6c] font-bold mt-0.5">{entry.dayLabel}</span>
+                    <span className={`text-[10px] font-bold mt-0.5 ${isToday ? 'text-[#006e22]' : 'text-[#6f7a6c]'}`}>
+                      {isToday ? 'Hôm nay' : dayMonthStr}
+                    </span>
                     <div className="my-1 transform hover:scale-110 transition-transform">
                       <EmotionIcon
                         emotion={entry.emotion}
@@ -902,7 +920,7 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
                       {entry.emotion}
                     </span>
                     <span className="text-[7px] text-[#6f7a6c] font-mono mt-0.5">
-                      {entry.date.split('-').slice(1).reverse().join('/')}
+                      {isToday ? dayMonthStr : dayOfWeek}
                     </span>
                   </button>
                 );

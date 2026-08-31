@@ -18,7 +18,6 @@ import {
   HelpCircle,
   Sparkles,
   Cloud,
-  CloudCheck,
   LogIn,
   LogOut,
 } from 'lucide-react';

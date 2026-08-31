@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { audioSynth } from '../utils/audioSynth';
 import { CrystalGlassOrb, OrbThemeColor, ORB_THEMES } from './CrystalGlassOrb';
-import { DraggableVerticalFloat } from './DraggableVerticalFloat';
+import { querySoulCareCompanion, SoulCareUserContext } from '../utils/aiSoulCompanion';
 
 interface EmotionOrbChatbotProps {
   userName: string;
@@ -62,7 +62,51 @@ export const EmotionOrbChatbot: React.FC<EmotionOrbChatbotProps> = ({
   const activeThemeRef = useRef<OrbThemeColor>(activeTheme);
   activeThemeRef.current = activeTheme;
 
-  // Sync when prop changes
+  const [orbBottom, setOrbBottom] = useState<number>(80);
+  const isDraggingOrb = useRef(false);
+  const dragStartY = useRef(0);
+  const startBottomY = useRef(80);
+  const hasMovedSignificant = useRef(false);
+
+  const handleDragStart = (e: React.TouchEvent | React.MouseEvent) => {
+    isDraggingOrb.current = true;
+    hasMovedSignificant.current = false;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    dragStartY.current = clientY;
+    startBottomY.current = orbBottom;
+  };
+
+  useEffect(() => {
+    const handleDragMove = (e: MouseEvent | TouchEvent) => {
+      if (!isDraggingOrb.current) return;
+      const clientY = 'touches' in e ? e.touches[0].clientY : (e as MouseEvent).clientY;
+      const deltaY = dragStartY.current - clientY;
+
+      if (Math.abs(deltaY) > 5) {
+        hasMovedSignificant.current = true;
+      }
+
+      const newBottom = Math.max(70, Math.min(650, startBottomY.current + deltaY));
+      setOrbBottom(newBottom);
+    };
+
+    const handleDragEnd = () => {
+      isDraggingOrb.current = false;
+    };
+
+    window.addEventListener('mousemove', handleDragMove);
+    window.addEventListener('mouseup', handleDragEnd);
+    window.addEventListener('touchmove', handleDragMove, { passive: false });
+    window.addEventListener('touchend', handleDragEnd);
+
+    return () => {
+      window.removeEventListener('mousemove', handleDragMove);
+      window.removeEventListener('mouseup', handleDragEnd);
+      window.removeEventListener('touchmove', handleDragMove);
+      window.removeEventListener('touchend', handleDragEnd);
+    };
+  }, [orbBottom]);
+
   useEffect(() => {
     if (currentOrbTheme && currentOrbTheme !== activeThemeRef.current) {
       setActiveTheme(currentOrbTheme);
@@ -73,7 +117,7 @@ export const EmotionOrbChatbot: React.FC<EmotionOrbChatbotProps> = ({
     {
       id: 'm1',
       sender: 'bot',
-      text: 'Chào bạn! Mình là "Hi" - Trợ Lý Tri Kỷ AI & Điều Phối Viên Sức Khỏe Tinh Thần của bạn 🌿.\n\nHôm nay trong lòng bạn có điều gì trăn trở hay muốn tâm sự không? Mình luôn ở đây để lắng nghe bạn.',
+      text: `Chào ${userName || 'bạn'}! Mình là "Hi" - Quả Cầu Tri Kỷ AI 🌿.\n\nHôm nay trong lòng bạn có điều gì trăn trở hay niềm vui nào muốn tâm sự không? Hi luôn ở đây để lắng nghe bạn.`,
       timestamp: 'Vừa xong',
     },
   ]);
@@ -82,7 +126,6 @@ export const EmotionOrbChatbot: React.FC<EmotionOrbChatbotProps> = ({
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-cycle colors randomly every 6 seconds safely outside of updater
   useEffect(() => {
     const themes: OrbThemeColor[] = ['mint', 'amber', 'lavender', 'rose', 'ocean'];
     const timer = setInterval(() => {
@@ -91,7 +134,7 @@ export const EmotionOrbChatbot: React.FC<EmotionOrbChatbotProps> = ({
       const next = others[Math.floor(Math.random() * others.length)];
       setActiveTheme(next);
       onChangeOrbTheme?.(next);
-    }, 6000);
+    }, 8000);
     return () => clearInterval(timer);
   }, [onChangeOrbTheme]);
 
@@ -113,15 +156,14 @@ export const EmotionOrbChatbot: React.FC<EmotionOrbChatbotProps> = ({
     }
   }, [messages, isLoading, isOpen]);
 
-  const handleSendMessage = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const cleanText = inputText.trim();
-    if (!cleanText || isLoading) return;
+  const handleSendMessage = async (textToSend?: string) => {
+    const text = (textToSend || inputText).trim();
+    if (!text || isLoading) return;
 
     const userMsg: ChatMessage = {
       id: `msg-${Date.now()}`,
       sender: 'user',
-      text: cleanText,
+      text,
       timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
     };
 
@@ -129,108 +171,69 @@ export const EmotionOrbChatbot: React.FC<EmotionOrbChatbotProps> = ({
     setInputText('');
     setIsLoading(true);
 
-    const moodHistorySummary = moodMap.map((m) => `${m.dayLabel}: ${m.emotion}`).join(', ');
-    const userContext = {
-      user_name: userName || 'Bạn',
-      quiz_radar_summary: `Trầm cảm: ${quizResult?.depressionPct ?? 35}%, Lo âu: ${quizResult?.anxietyPct ?? 45}%, Căng thẳng: ${quizResult?.stressPct ?? 55}%, Giấc ngủ: ${quizResult?.sleepPct ?? 60}%`,
-      mood_history_7days: moodHistorySummary,
-      active_challenge: `${challengeProgress?.challengeTitle ?? '21 Ngày Tái Thiết Giấc Ngủ & Thư Giãn'} (Streak: ${challengeProgress?.currentStreak ?? 0} ngày)`,
-      free_session_status: latestAppointment?.status === 'completed' ? 'COMPLETED' : 'AVAILABLE',
-      latest_expert_recap: {
-        expert_name: latestAppointment?.expertName ?? 'Chuyên gia Tâm lý',
-        recommended_plan: latestAppointment?.status === 'completed' ? 'UNTANGLE_3S' : 'STARTER_FREE',
-        doctor_notes_summary: latestAppointment?.doctorRecap?.formattedRecap ?? 'Chưa có buổi tư vấn',
-      },
-      sos_buddy_name: sosBuddy.name || 'Người thân',
+    const companionContext: SoulCareUserContext = {
+      userName: userName || 'Bạn',
+      quizResult,
+      moodMap,
+      challengeProgress,
+      latestAppointment,
+      sosBuddy,
     };
 
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: cleanText,
-          userContext,
-          history: messages.slice(-4),
-        }),
-      });
+      const reply = await querySoulCareCompanion(text, companionContext, messages);
 
-      const data = await res.json();
-      let actionFlag: ChatMessage['actionFlag'] = (data.suggested_action as ChatMessage['actionFlag']) || undefined;
-      let rawText = data.message_to_user || data.text || 'Hi luôn lắng nghe và đồng hành cùng bạn.';
-      let actionButtonText = data.action_button_text || null;
-
-      if (rawText.includes('[ACTION: TRIGGER_SOS_DRAWER]') || rawText.includes('[TRIGGER_SOS_DRAWER = TRUE]') || data.triggerSOS || actionFlag === 'TRIGGER_SOS') {
-        actionFlag = 'TRIGGER_SOS';
-        rawText = rawText.replace(/\[ACTION: TRIGGER_SOS_DRAWER\]|\[TRIGGER_SOS_DRAWER = TRUE\]/g, '');
-        onTriggerSOS();
-      } else if (rawText.includes('[ACTION: NAVIGATE_BOOKING_FREE]')) {
-        actionFlag = 'NAVIGATE_BOOKING_FREE';
-        rawText = rawText.replace('[ACTION: NAVIGATE_BOOKING_FREE]', '');
-      } else if (rawText.includes('[ACTION: VIEW_CARE_PLANS]')) {
-        actionFlag = 'VIEW_CARE_PLANS';
-        rawText = rawText.replace('[ACTION: VIEW_CARE_PLANS]', '');
-      } else if (rawText.includes('[ACTION: NAVIGATE_BREATHING]')) {
-        actionFlag = 'NAVIGATE_BREATHING';
-        rawText = rawText.replace('[ACTION: NAVIGATE_BREATHING]', '');
-      } else if (rawText.includes('[ACTION: NAVIGATE_HEALING_HUB]')) {
-        actionFlag = 'NAVIGATE_HEALING_HUB';
-        rawText = rawText.replace('[ACTION: NAVIGATE_HEALING_HUB]', '');
-      } else if (rawText.includes('[ACTION: NAVIGATE_BOOKING]')) {
-        actionFlag = 'NAVIGATE_BOOKING';
-        rawText = rawText.replace('[ACTION: NAVIGATE_BOOKING]', '');
-      }
-
-      if (actionFlag === 'TRIGGER_SOS' || actionFlag === 'TRIGGER_SOS_DRAWER') {
+      if (reply.actionFlag === 'TRIGGER_SOS' || reply.isCrisis) {
         onTriggerSOS();
       }
 
       const botReply: ChatMessage = {
         id: `msg-${Date.now() + 1}`,
         sender: 'bot',
-        text: rawText.trim(),
+        text: reply.text,
         timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-        actionFlag,
-        actionButtonText,
-        contextInsight: data.context_insight,
-        isCrisis: data.isCrisis || actionFlag === 'TRIGGER_SOS' || actionFlag === 'TRIGGER_SOS_DRAWER',
+        actionFlag: reply.actionFlag === 'NONE' ? undefined : reply.actionFlag,
+        actionButtonText: reply.actionButtonText,
+        contextInsight: reply.contextInsight,
+        isCrisis: Boolean(reply.isCrisis || reply.actionFlag === 'TRIGGER_SOS'),
       };
 
       setMessages((prev) => [...prev, botReply]);
-      audioSynth.playChime(528, 0.5);
-    } catch {
-      const fallbackReply: ChatMessage = {
-        id: `msg-${Date.now() + 1}`,
-        sender: 'bot',
-        text: 'Hi luôn ở bên cạnh bạn. Bạn có muốn thử một bài tập thở 3 phút để thư giãn không?',
-        timestamp: 'Vừa xong',
-        actionFlag: 'NAVIGATE_BREATHING',
-        actionButtonText: '👉 Thử bài tập hít thở ngay',
-      };
-      setMessages((prev) => [...prev, fallbackReply]);
+      audioSynth.playChime(528, 0.4);
+    } catch (err) {
+      console.error('Lỗi khi chat qua Quả Cầu Tri Kỷ:', err);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const onSubmitForm = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSendMessage();
   };
 
   const themeConfig = ORB_THEMES[activeTheme] || ORB_THEMES.mint;
 
   return (
     <>
-      {/* 1. FLOATING EMOTION ORB BUTTON (WITH VERTICAL DRAG CONTROL) */}
+      {/* 1. QUẢ CẦU NỔI */}
       {!isOpen && (
-        <DraggableVerticalFloat
-          side="right"
-          storageKey="soulcare_orb_float_pos_y"
-          tooltip="Quả Cầu Cảm Xúc AI - Chạm để trò chuyện"
-          onClick={() => {
-            audioSynth.playChime(580, 0.3);
-            onToggleOpen(true);
-          }}
+        <div
+          style={{ bottom: `${orbBottom}px` }}
+          onMouseDown={handleDragStart}
+          onTouchStart={handleDragStart}
+          className="fixed right-3.5 z-40 flex items-center gap-2 touch-none select-none cursor-grab active:cursor-grabbing animate-in fade-in zoom-in-75"
         >
-          <div
-            className="group relative flex items-center justify-center cursor-pointer transition-transform duration-300 hover:scale-110 active:scale-95 focus:outline-none drop-shadow-lg"
-            title="Quả Cầu Cảm Xúc AI - Chạm để trò chuyện"
+          <button
+            type="button"
+            onClick={() => {
+              if (!hasMovedSignificant.current) {
+                audioSynth.playChime(580, 0.3);
+                onToggleOpen(true);
+              }
+            }}
+            className="group relative flex items-center justify-center cursor-pointer transition-transform duration-200 hover:scale-110 active:scale-95 focus:outline-none drop-shadow-lg"
+            title="Quả Cầu Cảm Xúc AI - Nhấn giữ để kéo lên/xuống • Chạm để trò chuyện"
           >
             <CrystalGlassOrb
               theme={activeTheme}
@@ -240,37 +243,37 @@ export const EmotionOrbChatbot: React.FC<EmotionOrbChatbotProps> = ({
               showGlow={true}
             />
 
-            <span className="absolute -top-1 -right-1 px-2 py-0.5 rounded-full bg-[#ffffff] text-[#006e22] text-[9px] font-extrabold border border-[#67c76c]/40 shadow-sm flex items-center gap-1">
+            <span className="absolute -top-1 -right-1 px-2 py-0.5 rounded-full bg-[#ffffff] text-[#006e22] text-[9px] font-extrabold border border-[#67c76c]/40 shadow-sm flex items-center gap-1 pointer-events-none">
               <span className="w-1.5 h-1.5 rounded-full bg-[#006e22] animate-ping" />
               AI
             </span>
-          </div>
-        </DraggableVerticalFloat>
+          </button>
+        </div>
       )}
 
-      {/* 2. FLOATING OVERLAY CHATBOT MODAL (LIGHT THEME) */}
+      {/* 2. KHUNG CHAT POPUP */}
       {isOpen && (
-        <div className="absolute inset-0 z-50 bg-[#181d16]/40 backdrop-blur-sm flex flex-col justify-end animate-in fade-in slide-in-from-bottom-6 duration-300">
-          <div className="w-full h-[88%] bg-[#ffffff] border-t border-[#dfe4d9] rounded-t-[32px] shadow-2xl flex flex-col overflow-hidden relative text-[#181d16]">
-            {/* Top Glass Header */}
-            <div className="px-4 py-3 bg-[#f7faf8] border-b border-[#dfe4d9] flex items-center justify-between shrink-0">
+        <div className="fixed inset-0 z-50 bg-[#181d16]/40 backdrop-blur-sm flex flex-col justify-end animate-in fade-in slide-in-from-bottom-6 duration-300">
+          <div className="w-full max-w-2xl mx-auto h-[88vh] bg-[#ffffff] border-t border-[#dfe4d9] rounded-t-[32px] shadow-2xl flex flex-col overflow-hidden relative text-[#181d16]">
+            {/* Header */}
+            <div className="px-4 py-3.5 bg-[#f7faf8] border-b border-[#dfe4d9] flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
                 <CrystalGlassOrb theme={activeTheme} size="sm" showGlow={false} />
 
                 <div>
                   <h3 className="text-xs font-bold text-[#181d16] flex items-center gap-1.5">
-                    Quả Cầu Cảm Xúc SoulCare
+                    Trợ Lý Tri Kỷ SoulCare "Hi"
                     <span className="text-[9px] px-2 py-0.2 rounded-full font-bold bg-[#e0f5ea] text-[#006e22] border border-[#67c76c]/30">
                       {themeConfig.name.split(' ')[0]}
                     </span>
                   </h3>
                   <p className="text-[10px] text-[#6f7a6c]">
-                    Lắng nghe thấu cảm • Chuyển sắc tự nhiên • Bảo mật y tế
+                    Lắng nghe thấu cảm • Cá nhân hóa theo dữ liệu của bạn
                   </p>
                 </div>
               </div>
 
-              {/* Close Tool */}
+              {/* Nút đóng */}
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
@@ -278,7 +281,7 @@ export const EmotionOrbChatbot: React.FC<EmotionOrbChatbotProps> = ({
                     audioSynth.playChime(420, 0.15);
                     onToggleOpen(false);
                   }}
-                  className="w-8 h-8 rounded-full bg-[#ffffff] hover:bg-[#eaf0e5] text-[#181d16] flex items-center justify-center transition border border-[#dfe4d9] shadow-sm"
+                  className="w-8 h-8 rounded-full bg-[#ffffff] hover:bg-[#eaf0e5] text-[#181d16] flex items-center justify-center transition border border-[#dfe4d9] shadow-sm cursor-pointer"
                   title="Thu nhỏ"
                 >
                   <X className="w-4 h-4" />
@@ -286,7 +289,7 @@ export const EmotionOrbChatbot: React.FC<EmotionOrbChatbotProps> = ({
               </div>
             </div>
 
-            {/* Chat Messages Log */}
+            {/* Danh sách tin nhắn */}
             <div
               ref={messagesContainerRef}
               className="flex-1 overflow-y-auto p-4 space-y-3.5 no-scrollbar bg-[#f6fbf0]"
@@ -317,7 +320,7 @@ export const EmotionOrbChatbot: React.FC<EmotionOrbChatbotProps> = ({
                     >
                       <p className="whitespace-pre-line">{msg.text}</p>
 
-                      {/* Interactive Action Triggers in Chat */}
+                      {/* Interactive Action Buttons */}
                       {msg.actionFlag === 'NAVIGATE_BREATHING' && (
                         <button
                           type="button"
@@ -325,10 +328,10 @@ export const EmotionOrbChatbot: React.FC<EmotionOrbChatbotProps> = ({
                             onToggleOpen(false);
                             onNavigateToBreathing();
                           }}
-                          className="w-full py-2 px-3 rounded-full bg-[#006e22] text-white font-bold text-[11px] flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm"
+                          className="w-full py-2 px-3 rounded-full bg-[#006e22] text-white font-bold text-[11px] flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm cursor-pointer"
                         >
                           <Wind className="w-3.5 h-3.5" />
-                          <span>Tập thở 4-7-8</span>
+                          <span>{msg.actionButtonText || '👉 Thử bài tập thở 4-7-8'}</span>
                         </button>
                       )}
 
@@ -339,10 +342,10 @@ export const EmotionOrbChatbot: React.FC<EmotionOrbChatbotProps> = ({
                             onToggleOpen(false);
                             onNavigateToHealingHub();
                           }}
-                          className="w-full py-2 px-3 rounded-full bg-[#366664] text-white font-bold text-[11px] flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm"
+                          className="w-full py-2 px-3 rounded-full bg-[#366664] text-white font-bold text-[11px] flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm cursor-pointer"
                         >
                           <Headphones className="w-3.5 h-3.5" />
-                          <span>Sóng não 432Hz</span>
+                          <span>{msg.actionButtonText || '🎧 Nghe nhạc 432Hz & Podcast'}</span>
                         </button>
                       )}
 
@@ -353,10 +356,10 @@ export const EmotionOrbChatbot: React.FC<EmotionOrbChatbotProps> = ({
                             onToggleOpen(false);
                             onNavigateToStreak();
                           }}
-                          className="w-full py-2 px-3 rounded-full bg-[#ffffff] border border-[#dfe4d9] text-[#006e22] font-bold text-[11px] flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm"
+                          className="w-full py-2 px-3 rounded-full bg-[#ffffff] border border-[#dfe4d9] text-[#006e22] font-bold text-[11px] flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm cursor-pointer"
                         >
                           <Flame className="w-3.5 h-3.5 text-amber-500" />
-                          <span>Điểm danh Streak</span>
+                          <span>{msg.actionButtonText || '🔥 Điểm danh Streak hôm nay'}</span>
                         </button>
                       )}
 
@@ -367,7 +370,7 @@ export const EmotionOrbChatbot: React.FC<EmotionOrbChatbotProps> = ({
                             onToggleOpen(false);
                             onNavigateToBooking();
                           }}
-                          className="w-full py-2 px-3 rounded-full bg-[#006e22] text-white font-bold text-[11px] flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm"
+                          className="w-full py-2 px-3 rounded-full bg-[#006e22] text-white font-bold text-[11px] flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm cursor-pointer"
                         >
                           <Calendar className="w-3.5 h-3.5" />
                           <span>{msg.actionButtonText || '👉 Đặt Lịch Tư Vấn 0đ'}</span>
@@ -385,7 +388,7 @@ export const EmotionOrbChatbot: React.FC<EmotionOrbChatbotProps> = ({
                               onNavigateToBooking();
                             }
                           }}
-                          className="w-full py-2 px-3 rounded-full bg-[#006e22] text-white font-bold text-[11px] flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm"
+                          className="w-full py-2 px-3 rounded-full bg-[#006e22] text-white font-bold text-[11px] flex items-center justify-center gap-1.5 transition active:scale-95 shadow-sm cursor-pointer"
                         >
                           <Sparkles className="w-3.5 h-3.5" />
                           <span>{msg.actionButtonText || '👉 Xem Lộ Trình Đề Xuất'}</span>
@@ -399,10 +402,10 @@ export const EmotionOrbChatbot: React.FC<EmotionOrbChatbotProps> = ({
                             onToggleOpen(false);
                             onTriggerSOS();
                           }}
-                          className="w-full py-2 px-3 rounded-full bg-[#ba1a1a] text-white font-bold text-[11px] flex items-center justify-center gap-1.5 transition shadow-sm"
+                          className="w-full py-2 px-3 rounded-full bg-[#ba1a1a] text-white font-bold text-[11px] flex items-center justify-center gap-1.5 transition shadow-sm cursor-pointer"
                         >
                           <AlertCircle className="w-3.5 h-3.5" />
-                          <span>{msg.actionButtonText || '🚨 Mở Khay Cứu Hộ SOS'}</span>
+                          <span>{msg.actionButtonText || '🚨 Mở Khay Cứu Hộ SOS Khẩn Cấp'}</span>
                         </button>
                       )}
 
@@ -417,29 +420,48 @@ export const EmotionOrbChatbot: React.FC<EmotionOrbChatbotProps> = ({
               {isLoading && (
                 <div className="flex items-center gap-2 text-[#4a6551] text-xs italic">
                   <CrystalGlassOrb theme={activeTheme} size="xs" showGlow={false} />
-                  <span>SoulCare đang lắng nghe và suy ngẫm...</span>
+                  <span>Hi đang lắng nghe và suy ngẫm cùng bạn...</span>
                 </div>
               )}
               <div className="h-2" />
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Chat Input Bar */}
+            {/* Suggested Quick Prompts */}
+            <div className="px-3 py-1.5 flex gap-1.5 overflow-x-auto no-scrollbar shrink-0 bg-[#f0f5ea]/60">
+              {[
+                'Hôm nay mình vui lắm! ✨',
+                'Mình bị khó ngủ và áp lực 😴',
+                'Buổi tư vấn 0đ thế nào? 🩺',
+                'Tập thở 4-7-8 giúp mình 🌬️',
+              ].map((quick, idx) => (
+                <button
+                  key={`orb-qp-${idx}`}
+                  type="button"
+                  onClick={() => handleSendMessage(quick)}
+                  className="px-2.5 py-1 rounded-full bg-[#ffffff] border border-[#dfe4d9] text-[10px] text-[#4a6551] hover:text-[#006e22] hover:border-[#67c76c] whitespace-nowrap transition shadow-2xs cursor-pointer active:scale-95"
+                >
+                  {quick}
+                </button>
+              ))}
+            </div>
+
+            {/* Input Bar */}
             <form
-              onSubmit={handleSendMessage}
+              onSubmit={onSubmitForm}
               className="p-3 bg-[#ffffff] border-t border-[#dfe4d9] flex items-center gap-2 shrink-0 shadow-sm"
             >
               <input
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                placeholder="Tâm sự cùng SoulCare..."
+                placeholder="Chia sẻ cùng Hi về cảm xúc của bạn..."
                 className="flex-1 py-2.5 px-4 rounded-2xl bg-[#f7faf8] border border-[#dfe4d9] text-xs text-[#181d16] placeholder-[#6f7a6c]/60 focus:outline-none focus:ring-2 focus:ring-[#006e22]"
               />
               <button
                 type="submit"
                 disabled={!inputText.trim() || isLoading}
-                className="w-10 h-10 rounded-2xl bg-[#006e22] hover:bg-[#005116] disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center transition shadow-sm shrink-0"
+                className="w-10 h-10 rounded-2xl bg-[#006e22] hover:bg-[#005116] disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center transition shadow-sm shrink-0 cursor-pointer"
               >
                 <Send className="w-4 h-4" />
               </button>
